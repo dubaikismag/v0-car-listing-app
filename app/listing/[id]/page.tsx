@@ -6,7 +6,7 @@ import { Header } from '@/components/header'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
 import { AuthProvider } from '@/lib/auth-context'
-import { useStore } from '@/lib/store'
+import { useAppStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils'
 
 function ListingDetailContent({ id }: { id: string }) {
   const router = useRouter()
-  const getListingById = useStore((state) => state.getListingById)
+  const getListingById = useAppStore((state) => state.getListingById)
   const listing = getListingById(id)
   const [isLiked, setIsLiked] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
