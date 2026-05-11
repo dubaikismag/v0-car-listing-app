@@ -1,7 +1,8 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import { useAppStore, type User } from './store'
+import { useAppStore } from './store'
+import type { User } from './store'
 
 interface AuthContextType {
   isAuthModalOpen: boolean

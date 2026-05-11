@@ -66,18 +66,18 @@ export interface WhatsAppActive {
   activeTime: string
 }
 
-interface User {
+export interface User {
   id: string
   name: string
   email?: string
   phone?: string
-  location: string
-  memberSince: string
-  verified: boolean
-  activeAds: number
-  coins: number
-  rating: number
-  sold: number
+  location?: string
+  memberSince?: string
+  verified?: boolean
+  activeAds?: number
+  coins?: number
+  rating?: number
+  sold?: number
 }
 
 interface AppState {

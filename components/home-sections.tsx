@@ -473,3 +473,73 @@ export function GoVIPBanner() {
     </div>
   )
 }
+
+// Wanted Preview Section
+export function WantedPreview() {
+  const { wantedPosts } = useAppStore()
+  
+  return (
+    <div className="py-4">
+      <div className="flex items-center justify-between px-4 mb-3">
+        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <span>🤝</span> Wanted & Required
+        </h3>
+        <Link href="/wanted" className="text-purple-600 text-sm font-medium">All &rsaquo;</Link>
+      </div>
+      <div className="px-4 space-y-3">
+        {wantedPosts.slice(0, 2).map((post) => (
+          <div key={post.id} className="bg-white rounded-xl p-4 border border-gray-100">
+            <h4 className="font-semibold text-gray-900 mb-1">{post.title}</h4>
+            <p className="text-gray-500 text-sm mb-2">{post.budget} - {post.description}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span>{post.userFlag}</span>
+                <span className="text-sm text-gray-600">{post.userName}</span>
+              </div>
+              <button className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium">
+                Contact
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Community Groups Preview
+export function GroupsPreview() {
+  const { communityGroups, joinGroup } = useAppStore()
+  
+  return (
+    <div className="py-4">
+      <div className="flex items-center justify-between px-4 mb-3">
+        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <span>🌍</span> Community Groups
+        </h3>
+        <Link href="/groups" className="text-purple-600 text-sm font-medium">All &rsaquo;</Link>
+      </div>
+      <div className="px-4 space-y-2">
+        {communityGroups.slice(0, 3).map((group) => (
+          <div key={group.id} className="bg-white rounded-xl p-3 border border-gray-100 flex items-center gap-3">
+            <span className="text-2xl">{group.flag}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 truncate">{group.name}</p>
+              <p className="text-xs text-gray-500">{group.members.toLocaleString()} members</p>
+            </div>
+            <button
+              onClick={() => joinGroup(group.id)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                group.joined
+                  ? 'bg-purple-100 text-purple-600'
+                  : 'bg-purple-600 text-white'
+              }`}
+            >
+              {group.joined ? 'Joined' : 'Join'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

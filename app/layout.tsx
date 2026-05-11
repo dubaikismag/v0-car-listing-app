@@ -1,52 +1,10 @@
-import type { Metadata, Viewport } from 'next'
+'use client'
+
 import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: 'DubaiKisMag - Buy & Sell in Dubai',
-  description: 'Dubai\'s premier classifieds marketplace. Buy and sell cars, properties, electronics, and more. Post free ads and connect with buyers in Dubai.',
-  keywords: ['dubai classifieds', 'buy sell dubai', 'cars dubai', 'property dubai', 'dubaikismag'],
-  authors: [{ name: 'DubaiKisMag' }],
-  creator: 'DubaiKisMag',
-  publisher: 'DubaiKisMag',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
-  openGraph: {
-    title: 'DubaiKisMag - Buy & Sell in Dubai',
-    description: 'Dubai\'s premier classifieds marketplace',
-    url: 'https://dubaikismag.com',
-    siteName: 'DubaiKisMag',
-    locale: 'en_AE',
-    type: 'website',
-  },
-}
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#f59e0b',
-}
+const geist = Geist({ subsets: ["latin"], variable: '--font-geist' })
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: '--font-geist-mono' })
 
 export default function RootLayout({
   children,
@@ -54,10 +12,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-background">
-      <body className="font-sans antialiased">
+    <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
+      <head>
+        <title>DubaiKismag - Buy &amp; Sell in Dubai</title>
+        <meta name="description" content="Dubai's premier classifieds marketplace" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="theme-color" content="#7c3aed" />
+        <link rel="icon" href="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/apple-touch-icon-tv4jcor3qKUge0g7yZk72wwXar34V7.png" />
+      </head>
+      <body className="font-sans antialiased bg-[#f8f7fc]">
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   )

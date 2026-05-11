@@ -16,12 +16,14 @@ import {
   WhatsAppActiveSection,
   EmergencyHelpBanner,
   ReferEarnBanner,
-  GoVIPBanner
+  GoVIPBanner,
+  WantedPreview,
+  GroupsPreview
 } from '@/components/home-sections'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-[#f8f7fc] pb-20">
       <Header />
       <TopTabs />
       
@@ -35,6 +37,8 @@ export default function HomePage() {
         <FarmlandSection />
         <AIRecommended />
         <WhatsAppActiveSection />
+        <WantedPreview />
+        <GroupsPreview />
         <EmergencyHelpBanner />
         <ReferEarnBanner />
         <GoVIPBanner />
