@@ -20,7 +20,7 @@ export function Header({ showSearch = true }: HeaderProps) {
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
             <img 
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/apple-touch-icon-tv4jcor3qKUge0g7yZk72wwXar34V7.png" 
+              src="/logo.png" 
               alt="DubaiKismag" 
               className="w-full h-full object-cover"
             />
