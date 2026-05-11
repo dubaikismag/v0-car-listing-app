@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
 import { useAppStore } from '@/lib/store'
-import { X } from 'lucide-react'
+import { X, ArrowLeft } from 'lucide-react'
 
 interface FarmPlot {
   id: number
@@ -21,6 +21,31 @@ export default function FunPage() {
   const [spinRotation, setSpinRotation] = useState(0)
   const [spinResult, setSpinResult] = useState<string | null>(null)
   
+  // Scratch card state
+  const [scratchRevealed, setScratchRevealed] = useState(false)
+  const [scratchPrize, setScratchPrize] = useState('')
+  
+  // Flash auction state
+  const [auctionTime, setAuctionTime] = useState(3600)
+  const [currentBid, setCurrentBid] = useState(150)
+  const [userBid, setUserBid] = useState('')
+  
+  // Memory game state
+  const [memoryCards, setMemoryCards] = useState<{id: number, emoji: string, flipped: boolean, matched: boolean}[]>([])
+  const [selectedCards, setSelectedCards] = useState<number[]>([])
+  const [memoryMoves, setMemoryMoves] = useState(0)
+  
+  // Quiz state
+  const [quizQuestion, setQuizQuestion] = useState(0)
+  const [quizScore, setQuizScore] = useState(0)
+  const [quizAnswered, setQuizAnswered] = useState(false)
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
+  
+  // Word puzzle state
+  const [wordLetters, setWordLetters] = useState<string[]>([])
+  const [guessedWord, setGuessedWord] = useState('')
+  const [wordHint, setWordHint] = useState('')
+  
   // Farm game state
   const [farmPlots, setFarmPlots] = useState<FarmPlot[]>([
     { id: 1, state: 'ready', progress: 100 },
@@ -34,8 +59,44 @@ export default function FunPage() {
   ])
   const [waterTank, setWaterTank] = useState(70)
 
-  const prizes = ['5 Coins', 'Spin Again!', 'AED 10 Voucher', 'Free Ad Boost 7d', '20 Coins', 'AED 50 Voucher']
-  const prizeColors = ['#f59e0b', '#8b5cf6', '#f59e0b', '#8b5cf6', '#3b82f6', '#f59e0b']
+  const prizes = ['5 Coins', 'Spin Again!', 'AED 10', 'Free Boost', '20 Coins', 'AED 50']
+  
+  const quizQuestions = [
+    { q: 'What is the capital of UAE?', options: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman'], correct: 1 },
+    { q: 'Which emirate is the largest by area?', options: ['Dubai', 'Abu Dhabi', 'Sharjah', 'RAK'], correct: 1 },
+    { q: 'What is the currency of UAE?', options: ['Riyal', 'Dinar', 'Dirham', 'Dollar'], correct: 2 },
+    { q: 'Burj Khalifa is in which city?', options: ['Abu Dhabi', 'Sharjah', 'Dubai', 'Ajman'], correct: 2 },
+    { q: 'How many emirates are in UAE?', options: ['5', '6', '7', '8'], correct: 2 },
+  ]
+
+  const scratchPrizes = ['5 Coins', '10 Coins', 'AED 5 Voucher', 'Free Ad Boost', '20 Coins', 'Try Again']
+  
+  const words = [
+    { word: 'DUBAI', hint: 'Famous UAE city' },
+    { word: 'BURJ', hint: 'Tall building prefix' },
+    { word: 'DESERT', hint: 'Sandy landscape' },
+    { word: 'OASIS', hint: 'Water in desert' },
+    { word: 'CAMEL', hint: 'Desert animal' },
+  ]
+
+  // Initialize memory game
+  const initMemoryGame = () => {
+    const emojis = ['🚗', '🏠', '💼', '📱', '🛋️', '🌾', '👷', '💎']
+    const cards = [...emojis, ...emojis]
+      .sort(() => Math.random() - 0.5)
+      .map((emoji, i) => ({ id: i, emoji, flipped: false, matched: false }))
+    setMemoryCards(cards)
+    setSelectedCards([])
+    setMemoryMoves(0)
+  }
+
+  // Initialize word puzzle
+  const initWordPuzzle = () => {
+    const randomWord = words[Math.floor(Math.random() * words.length)]
+    setWordLetters(randomWord.word.split('').sort(() => Math.random() - 0.5))
+    setWordHint(randomWord.hint)
+    setGuessedWord('')
+  }
 
   const handleSpin = () => {
     if (isSpinning) return
@@ -55,7 +116,85 @@ export default function FunPage() {
         const coinAmount = parseInt(prizes[randomIndex])
         addCoins(coinAmount)
       }
-    }, 3000)
+    }, 4000)
+  }
+
+  const handleScratch = () => {
+    if (!scratchRevealed) {
+      const prize = scratchPrizes[Math.floor(Math.random() * scratchPrizes.length)]
+      setScratchPrize(prize)
+      setScratchRevealed(true)
+      if (prize.includes('Coins')) {
+        addCoins(parseInt(prize))
+      }
+    }
+  }
+
+  const handleBid = () => {
+    const bid = parseInt(userBid)
+    if (bid > currentBid) {
+      setCurrentBid(bid)
+      setUserBid('')
+    }
+  }
+
+  const handleMemoryClick = (cardId: number) => {
+    if (selectedCards.length === 2) return
+    if (memoryCards[cardId].matched || memoryCards[cardId].flipped) return
+
+    const newCards = memoryCards.map((c, i) => 
+      i === cardId ? { ...c, flipped: true } : c
+    )
+    setMemoryCards(newCards)
+    
+    const newSelected = [...selectedCards, cardId]
+    setSelectedCards(newSelected)
+
+    if (newSelected.length === 2) {
+      setMemoryMoves(m => m + 1)
+      setTimeout(() => {
+        const [first, second] = newSelected
+        if (newCards[first].emoji === newCards[second].emoji) {
+          setMemoryCards(cards => cards.map((c, i) =>
+            i === first || i === second ? { ...c, matched: true } : c
+          ))
+        } else {
+          setMemoryCards(cards => cards.map((c, i) =>
+            i === first || i === second ? { ...c, flipped: false } : c
+          ))
+        }
+        setSelectedCards([])
+      }, 1000)
+    }
+  }
+
+  const handleQuizAnswer = (index: number) => {
+    if (quizAnswered) return
+    setSelectedAnswer(index)
+    setQuizAnswered(true)
+    if (index === quizQuestions[quizQuestion].correct) {
+      setQuizScore(s => s + 10)
+      addCoins(10)
+    }
+  }
+
+  const nextQuestion = () => {
+    if (quizQuestion < quizQuestions.length - 1) {
+      setQuizQuestion(q => q + 1)
+      setQuizAnswered(false)
+      setSelectedAnswer(null)
+    } else {
+      setActiveGame(null)
+      setQuizQuestion(0)
+      setQuizScore(0)
+      setQuizAnswered(false)
+      setSelectedAnswer(null)
+    }
+  }
+
+  const handleLetterClick = (letter: string, index: number) => {
+    setGuessedWord(g => g + letter)
+    setWordLetters(letters => letters.filter((_, i) => i !== index))
   }
 
   const handlePlotClick = (plotId: number) => {
@@ -74,7 +213,17 @@ export default function FunPage() {
     }))
   }
 
-  // Simulate growth
+  // Auction countdown
+  useEffect(() => {
+    if (activeGame === 'auction') {
+      const interval = setInterval(() => {
+        setAuctionTime(t => t > 0 ? t - 1 : 0)
+      }, 1000)
+      return () => clearInterval(interval)
+    }
+  }, [activeGame])
+
+  // Simulate farm growth
   useEffect(() => {
     const interval = setInterval(() => {
       setFarmPlots(plots => plots.map(plot => {
@@ -92,6 +241,20 @@ export default function FunPage() {
     return () => clearInterval(interval)
   }, [])
 
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    const s = seconds % 60
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
+
+  const closeGame = () => {
+    setActiveGame(null)
+    setScratchRevealed(false)
+    setScratchPrize('')
+    setSpinResult(null)
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-20">
       <Header />
@@ -101,36 +264,36 @@ export default function FunPage() {
 
       <main className="px-4 py-4">
         {/* Fun Zone Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <span>🎮</span> Fun Zone
           </h2>
-          <span className="text-amber-500 font-semibold">Win AED Prizes!</span>
+          <span className="text-amber-500 font-semibold text-sm">Win AED Prizes!</span>
         </div>
 
-        <p className="text-gray-600 text-sm mb-4">Play & win ad credits, AED vouchers, coins - daily prizes!</p>
+        <p className="text-gray-600 text-xs mb-4">Play & win ad credits, AED vouchers, coins - daily prizes!</p>
 
         {/* Daily Check-in */}
-        <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-5 mb-4">
-          <div className="flex items-center gap-2 text-amber-900 text-sm font-medium mb-1">
+        <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl p-4 mb-4">
+          <div className="flex items-center gap-2 text-amber-900 text-xs font-medium mb-1">
             <span>⚡</span> DAILY CHECK-IN
           </div>
-          <h3 className="text-xl font-bold text-white mb-3">Claim your 5 coins today!</h3>
+          <h3 className="text-lg font-bold text-white mb-2">Claim your 5 coins today!</h3>
           <div className="flex items-center gap-3">
             <button
               onClick={() => !dailyCheckedIn && claimDaily()}
               disabled={dailyCheckedIn}
-              className={`px-5 py-2.5 rounded-lg font-semibold text-sm ${
+              className={`px-4 py-2 rounded-lg font-semibold text-sm ${
                 dailyCheckedIn
                   ? 'bg-white/50 text-amber-700'
-                  : 'bg-white text-amber-600'
+                  : 'bg-white text-amber-600 hover:bg-white/90'
               }`}
             >
               {dailyCheckedIn ? 'Claimed' : 'Claim Now'}
             </button>
-            <div className="flex items-center gap-1.5 bg-white/30 px-3 py-2 rounded-lg">
+            <div className="flex items-center gap-1.5 bg-white/30 px-3 py-1.5 rounded-lg">
               <span>🪙</span>
-              <span className="font-bold text-white">{coins} Coins</span>
+              <span className="font-bold text-white text-sm">{coins} Coins</span>
             </div>
           </div>
         </div>
@@ -140,12 +303,12 @@ export default function FunPage() {
           {/* Spin & Win */}
           <button
             onClick={() => setActiveGame('spin')}
-            className="bg-white rounded-xl p-4 text-center border border-gray-100"
+            className="bg-white rounded-xl p-3 text-center border border-gray-100 hover:border-purple-200 transition-colors"
           >
-            <span className="text-4xl block mb-2">🎡</span>
-            <p className="font-bold text-gray-900">Spin & Win</p>
-            <p className="text-xs text-gray-500 mb-2">Win AED vouchers & free ad boosts</p>
-            <span className="inline-block px-3 py-1 bg-amber-400 text-amber-900 rounded-full text-xs font-semibold">
+            <span className="text-3xl block mb-1">🎡</span>
+            <p className="font-bold text-gray-900 text-sm">Spin & Win</p>
+            <p className="text-xs text-gray-500 mb-2">Win AED vouchers & boosts</p>
+            <span className="inline-block px-2.5 py-1 bg-amber-100/80 text-amber-700 rounded-full text-xs font-medium backdrop-blur-sm">
               Play Free
             </span>
           </button>
@@ -153,12 +316,12 @@ export default function FunPage() {
           {/* UAE Quiz */}
           <button
             onClick={() => setActiveGame('quiz')}
-            className="bg-white rounded-xl p-4 text-center border border-gray-100"
+            className="bg-white rounded-xl p-3 text-center border border-gray-100 hover:border-purple-200 transition-colors"
           >
-            <span className="text-4xl block mb-2">🧠</span>
-            <p className="font-bold text-gray-900">UAE Quiz</p>
-            <p className="text-xs text-gray-500 mb-2">5 questions, earn up to 50 coins</p>
-            <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+            <span className="text-3xl block mb-1">🧠</span>
+            <p className="font-bold text-gray-900 text-sm">UAE Quiz</p>
+            <p className="text-xs text-gray-500 mb-2">5 questions, earn coins</p>
+            <span className="inline-block px-2.5 py-1 bg-purple-100/80 text-purple-700 rounded-full text-xs font-medium backdrop-blur-sm">
               +10 Coins each
             </span>
           </button>
@@ -166,12 +329,12 @@ export default function FunPage() {
           {/* Scratch Card */}
           <button
             onClick={() => setActiveGame('scratch')}
-            className="bg-white rounded-xl p-4 text-center border border-gray-100"
+            className="bg-white rounded-xl p-3 text-center border border-gray-100 hover:border-purple-200 transition-colors"
           >
-            <span className="text-4xl block mb-2">🎟️</span>
-            <p className="font-bold text-gray-900">Scratch Card</p>
-            <p className="text-xs text-gray-500 mb-2">Scratch & reveal daily prizes</p>
-            <span className="inline-block px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-xs font-semibold">
+            <span className="text-3xl block mb-1">🎟️</span>
+            <p className="font-bold text-gray-900 text-sm">Scratch Card</p>
+            <p className="text-xs text-gray-500 mb-2">Reveal daily prizes</p>
+            <span className="inline-block px-2.5 py-1 bg-pink-100/80 text-pink-700 rounded-full text-xs font-medium backdrop-blur-sm">
               Daily Free
             </span>
           </button>
@@ -179,25 +342,51 @@ export default function FunPage() {
           {/* Flash Auction */}
           <button
             onClick={() => setActiveGame('auction')}
-            className="bg-white rounded-xl p-4 text-center border border-gray-100"
+            className="bg-white rounded-xl p-3 text-center border border-gray-100 hover:border-purple-200 transition-colors"
           >
-            <span className="text-4xl block mb-2">⚒️</span>
-            <p className="font-bold text-gray-900">Flash Auction</p>
-            <p className="text-xs text-gray-500 mb-2">Bid on listings at huge discounts!</p>
-            <span className="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold flex items-center gap-1">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> Live Now
+            <span className="text-3xl block mb-1">⚒️</span>
+            <p className="font-bold text-gray-900 text-sm">Flash Auction</p>
+            <p className="text-xs text-gray-500 mb-2">Bid at huge discounts!</p>
+            <span className="inline-block px-2.5 py-1 bg-red-100/80 text-red-700 rounded-full text-xs font-medium backdrop-blur-sm flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> Live Now
+            </span>
+          </button>
+
+          {/* Memory Game */}
+          <button
+            onClick={() => { initMemoryGame(); setActiveGame('memory') }}
+            className="bg-white rounded-xl p-3 text-center border border-gray-100 hover:border-purple-200 transition-colors"
+          >
+            <span className="text-3xl block mb-1">🃏</span>
+            <p className="font-bold text-gray-900 text-sm">Memory Match</p>
+            <p className="text-xs text-gray-500 mb-2">Find matching pairs</p>
+            <span className="inline-block px-2.5 py-1 bg-blue-100/80 text-blue-700 rounded-full text-xs font-medium backdrop-blur-sm">
+              Brain Game
+            </span>
+          </button>
+
+          {/* Word Puzzle */}
+          <button
+            onClick={() => { initWordPuzzle(); setActiveGame('word') }}
+            className="bg-white rounded-xl p-3 text-center border border-gray-100 hover:border-purple-200 transition-colors"
+          >
+            <span className="text-3xl block mb-1">🔤</span>
+            <p className="font-bold text-gray-900 text-sm">Word Puzzle</p>
+            <p className="text-xs text-gray-500 mb-2">Unscramble the word</p>
+            <span className="inline-block px-2.5 py-1 bg-green-100/80 text-green-700 rounded-full text-xs font-medium backdrop-blur-sm">
+              +15 Coins
             </span>
           </button>
 
           {/* Farm Game */}
           <button
             onClick={() => setActiveGame('farm')}
-            className="bg-white rounded-xl p-4 text-center border border-gray-100"
+            className="bg-white rounded-xl p-3 text-center border border-gray-100 hover:border-purple-200 transition-colors"
           >
-            <span className="text-4xl block mb-2">🌾</span>
-            <p className="font-bold text-gray-900">Farm Game</p>
-            <p className="text-xs text-gray-500 mb-2">Grow your UAE farm, earn credits</p>
-            <span className="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+            <span className="text-3xl block mb-1">🌾</span>
+            <p className="font-bold text-gray-900 text-sm">Farm Game</p>
+            <p className="text-xs text-gray-500 mb-2">Grow & earn credits</p>
+            <span className="inline-block px-2.5 py-1 bg-green-100/80 text-green-700 rounded-full text-xs font-medium backdrop-blur-sm">
               Play Now
             </span>
           </button>
@@ -205,12 +394,12 @@ export default function FunPage() {
           {/* Leaderboard */}
           <button
             onClick={() => setActiveGame('leaderboard')}
-            className="bg-white rounded-xl p-4 text-center border border-gray-100"
+            className="bg-white rounded-xl p-3 text-center border border-gray-100 hover:border-purple-200 transition-colors"
           >
-            <span className="text-4xl block mb-2">🏆</span>
-            <p className="font-bold text-gray-900">Leaderboard</p>
-            <p className="text-xs text-gray-500 mb-2">Top sellers win monthly cash</p>
-            <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
+            <span className="text-3xl block mb-1">🏆</span>
+            <p className="font-bold text-gray-900 text-sm">Leaderboard</p>
+            <p className="text-xs text-gray-500 mb-2">Top sellers win cash</p>
+            <span className="inline-block px-2.5 py-1 bg-amber-100/80 text-amber-700 rounded-full text-xs font-medium backdrop-blur-sm">
               Monthly
             </span>
           </button>
@@ -220,24 +409,27 @@ export default function FunPage() {
       {/* Spin Wheel Modal */}
       {activeGame === 'spin' && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto animate-in slide-in-from-bottom">
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
             </div>
             <div className="px-5 pb-8">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <span>🎡</span> Spin & Win
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <span>🎡</span> Spin & Win
+                </h2>
+                <button onClick={closeGame} className="p-2 hover:bg-gray-100 rounded-full">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
               
               <div className="relative flex justify-center mb-6">
-                {/* Pointer */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
-                  <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[25px] border-l-transparent border-r-transparent border-t-amber-500 drop-shadow-lg"></div>
+                  <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[25px] border-l-transparent border-r-transparent border-t-purple-700 drop-shadow-lg"></div>
                 </div>
                 
-                {/* Wheel */}
                 <div 
-                  className="w-72 h-72 rounded-full border-8 border-amber-400 relative overflow-hidden shadow-xl"
+                  className="w-64 h-64 rounded-full border-8 border-purple-200 relative overflow-hidden shadow-xl"
                   style={{ 
                     transform: `rotate(${spinRotation}deg)`,
                     transition: isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
@@ -251,22 +443,20 @@ export default function FunPage() {
                     )`
                   }}
                 >
-                  {/* Center Circle */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-white shadow-lg z-10 flex items-center justify-center">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white shadow-lg z-10 flex items-center justify-center">
                     <span className="text-2xl">🎁</span>
                   </div>
                   
-                  {/* Prize Labels */}
                   {prizes.map((prize, i) => {
                     const angle = (360 / prizes.length) * i + 30
                     const radian = (angle - 90) * (Math.PI / 180)
-                    const radius = 100
+                    const radius = 90
                     const x = Math.cos(radian) * radius
                     const y = Math.sin(radian) * radius
                     return (
                       <div
                         key={i}
-                        className="absolute text-white text-xs font-bold text-center w-20"
+                        className="absolute text-white text-[10px] font-bold text-center w-16"
                         style={{
                           top: `calc(50% + ${y}px)`,
                           left: `calc(50% + ${x}px)`,
@@ -277,23 +467,11 @@ export default function FunPage() {
                       </div>
                     )
                   })}
-                  
-                  {/* Divider Lines */}
-                  {prizes.map((_, i) => {
-                    const angle = (360 / prizes.length) * i
-                    return (
-                      <div
-                        key={`line-${i}`}
-                        className="absolute top-1/2 left-1/2 w-0.5 h-36 bg-white/30 origin-bottom"
-                        style={{ transform: `translate(-50%, -100%) rotate(${angle}deg)` }}
-                      />
-                    )
-                  })}
                 </div>
               </div>
 
               {spinResult && (
-                <div className="text-center mb-4 p-4 bg-green-50 rounded-xl">
+                <div className="text-center mb-4 p-3 bg-green-50 rounded-xl">
                   <p className="text-lg font-bold text-green-700">You won: {spinResult}!</p>
                 </div>
               )}
@@ -301,20 +479,288 @@ export default function FunPage() {
               <button
                 onClick={handleSpin}
                 disabled={isSpinning}
-                className="w-full py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded-xl disabled:opacity-50 text-lg"
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded-xl disabled:opacity-50"
               >
                 {isSpinning ? 'Spinning...' : 'SPIN NOW!'}
               </button>
               
-              <p className="text-center text-gray-500 text-sm mt-3">AED vouchers - Free boosts - Coins!</p>
-              
-              <button
-                onClick={() => { setActiveGame(null); setSpinResult(null) }}
-                className="w-full py-3 mt-4 text-gray-500 font-medium"
-              >
-                Close
+              <p className="text-center text-gray-500 text-xs mt-3">AED vouchers - Free boosts - Coins!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scratch Card Modal */}
+      {activeGame === 'scratch' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 animate-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <span>🎟️</span> Scratch Card
+              </h2>
+              <button onClick={closeGame} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
+            
+            <div 
+              onClick={handleScratch}
+              className={`aspect-video rounded-xl flex items-center justify-center cursor-pointer transition-all ${
+                scratchRevealed 
+                  ? 'bg-gradient-to-br from-amber-400 to-amber-500' 
+                  : 'bg-gradient-to-br from-gray-300 to-gray-400'
+              }`}
+            >
+              {scratchRevealed ? (
+                <div className="text-center">
+                  <span className="text-4xl block mb-2">🎉</span>
+                  <p className="text-xl font-bold text-white">{scratchPrize}</p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <span className="text-4xl block mb-2">✨</span>
+                  <p className="text-white font-semibold">Tap to Scratch!</p>
+                </div>
+              )}
+            </div>
+            
+            <p className="text-center text-gray-500 text-sm mt-4">
+              {scratchRevealed ? 'Come back tomorrow for another scratch!' : 'Scratch to reveal your daily prize'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Flash Auction Modal */}
+      {activeGame === 'auction' && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto animate-in slide-in-from-bottom">
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+            </div>
+            <div className="px-5 pb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <span>⚒️</span> Flash Auction
+                </h2>
+                <button onClick={closeGame} className="p-2 hover:bg-gray-100 rounded-full">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Auction Item */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-red-500 font-bold text-sm flex items-center gap-1">
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    LIVE AUCTION
+                  </span>
+                  <span className="text-purple-700 font-bold">{formatTime(auctionTime)}</span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <span className="text-5xl">📱</span>
+                  <div>
+                    <p className="font-bold text-gray-900">iPhone 14 Pro Max 256GB</p>
+                    <p className="text-sm text-gray-500">Retail: AED 4,500</p>
+                    <p className="text-purple-600 font-bold text-xl mt-1">Current: AED {currentBid}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bid Input */}
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="number"
+                  placeholder="Enter your bid"
+                  value={userBid}
+                  onChange={(e) => setUserBid(e.target.value)}
+                  className="flex-1 px-4 py-3 border border-gray-200 rounded-xl"
+                />
+                <button
+                  onClick={handleBid}
+                  className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl"
+                >
+                  Bid
+                </button>
+              </div>
+
+              {/* Recent Bids */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="font-semibold text-gray-900 mb-2">Recent Bids</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Ahmed S.</span>
+                    <span className="font-medium">AED {currentBid}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Ravi K.</span>
+                    <span className="font-medium">AED {currentBid - 10}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Maria C.</span>
+                    <span className="font-medium">AED {currentBid - 25}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Memory Game Modal */}
+      {activeGame === 'memory' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <span>🃏</span> Memory Match
+              </h2>
+              <button onClick={closeGame} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-500 mb-3">Moves: {memoryMoves}</p>
+            
+            <div className="grid grid-cols-4 gap-2">
+              {memoryCards.map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => handleMemoryClick(card.id)}
+                  className={`aspect-square rounded-lg flex items-center justify-center text-2xl transition-all ${
+                    card.flipped || card.matched
+                      ? 'bg-purple-100'
+                      : 'bg-purple-600'
+                  }`}
+                >
+                  {(card.flipped || card.matched) ? card.emoji : '?'}
+                </button>
+              ))}
+            </div>
+            
+            {memoryCards.every(c => c.matched) && (
+              <div className="mt-4 p-3 bg-green-50 rounded-xl text-center">
+                <p className="font-bold text-green-700">Completed in {memoryMoves} moves!</p>
+                <button 
+                  onClick={initMemoryGame}
+                  className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium"
+                >
+                  Play Again
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Word Puzzle Modal */}
+      {activeGame === 'word' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <span>🔤</span> Word Puzzle
+              </h2>
+              <button onClick={closeGame} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-500 mb-4">Hint: {wordHint}</p>
+            
+            {/* Guessed Word Display */}
+            <div className="flex justify-center gap-2 mb-6">
+              {guessedWord.split('').map((letter, i) => (
+                <div key={i} className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center font-bold text-purple-700">
+                  {letter}
+                </div>
+              ))}
+              {Array(5 - guessedWord.length).fill('').map((_, i) => (
+                <div key={`empty-${i}`} className="w-10 h-10 border-2 border-dashed border-gray-300 rounded-lg"></div>
+              ))}
+            </div>
+            
+            {/* Available Letters */}
+            <div className="flex flex-wrap justify-center gap-2 mb-4">
+              {wordLetters.map((letter, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleLetterClick(letter, i)}
+                  className="w-10 h-10 bg-amber-400 rounded-lg flex items-center justify-center font-bold text-amber-900 hover:bg-amber-500"
+                >
+                  {letter}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => setGuessedWord('')}
+              className="w-full py-2 border border-gray-300 rounded-lg text-gray-600 text-sm"
+            >
+              Clear
+            </button>
+            
+            {wordLetters.length === 0 && (
+              <div className="mt-4 p-3 bg-green-50 rounded-xl text-center">
+                <p className="font-bold text-green-700">Correct! +15 Coins</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Quiz Modal */}
+      {activeGame === 'quiz' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <span>🧠</span> UAE Quiz
+              </h2>
+              <button onClick={closeGame} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm text-gray-500">Question {quizQuestion + 1} of {quizQuestions.length}</p>
+              <p className="text-sm font-bold text-purple-600">Score: {quizScore}</p>
+            </div>
+            
+            <p className="text-base font-semibold text-gray-900 mb-4">{quizQuestions[quizQuestion].q}</p>
+            
+            <div className="space-y-2">
+              {quizQuestions[quizQuestion].options.map((opt, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleQuizAnswer(i)}
+                  disabled={quizAnswered}
+                  className={`w-full p-3 border rounded-xl text-left transition-colors text-sm ${
+                    quizAnswered
+                      ? i === quizQuestions[quizQuestion].correct
+                        ? 'border-green-500 bg-green-50 text-green-700'
+                        : i === selectedAnswer
+                          ? 'border-red-500 bg-red-50 text-red-700'
+                          : 'border-gray-200 text-gray-600'
+                      : 'border-gray-200 hover:border-purple-400 hover:bg-purple-50/50'
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            
+            {quizAnswered && (
+              <button
+                onClick={nextQuestion}
+                className="w-full mt-4 py-3 bg-purple-600 text-white font-semibold rounded-xl"
+              >
+                {quizQuestion < quizQuestions.length - 1 ? 'Next Question' : 'Finish'}
+              </button>
+            )}
+            
+            <p className="text-center text-gray-500 text-xs mt-3">Earn 10 coins for each correct answer!</p>
           </div>
         </div>
       )}
@@ -322,28 +768,29 @@ export default function FunPage() {
       {/* Farm Game Modal */}
       {activeGame === 'farm' && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto animate-in slide-in-from-bottom">
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
             </div>
             <div className="px-5 pb-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
+                <h2 className="text-lg font-bold flex items-center gap-2">
                   <span>🌾</span> UAE Farm Game
-                  <span className="text-sm font-normal text-gray-500">- Earn ad credits!</span>
                 </h2>
+                <button onClick={closeGame} className="p-2 hover:bg-gray-100 rounded-full">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
               </div>
               
-              <div className="flex items-center justify-between mb-4 text-sm text-gray-600">
-                <span>Tap empty plots to plant - Tap crops to harvest</span>
+              <div className="flex items-center justify-between mb-3 text-sm text-gray-600">
+                <span>Tap empty to plant - Tap crops to harvest</span>
                 <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full">
                   <span>🪙</span>
                   <span className="font-bold">{coins}</span>
                 </div>
               </div>
 
-              {/* Farm Grid */}
-              <div className="grid grid-cols-4 gap-2 mb-6">
+              <div className="grid grid-cols-4 gap-2 mb-4">
                 {farmPlots.map((plot) => (
                   <button
                     key={plot.id}
@@ -357,96 +804,89 @@ export default function FunPage() {
                   >
                     {plot.state === 'empty' && (
                       <>
-                        <span className="text-3xl">+</span>
-                        <span className="text-xs text-amber-800">Plant</span>
+                        <span className="text-2xl">+</span>
+                        <span className="text-[10px] text-amber-800">Plant</span>
                       </>
                     )}
-                    {plot.state === 'planted' && (
-                      <>
-                        <span className="text-3xl">🌱</span>
-                        <span className="text-xs text-green-800">Growing</span>
-                      </>
-                    )}
+                    {plot.state === 'planted' && <span className="text-2xl">🌱</span>}
                     {plot.state === 'growing' && (
                       <>
-                        <span className="text-3xl">🌿</span>
-                        <span className="text-xs text-green-800">Growing</span>
-                        <div className="absolute bottom-1 left-1 right-1 h-1 bg-green-700 rounded-full overflow-hidden">
-                          <div className="h-full bg-yellow-400" style={{ width: `${plot.progress}%` }}></div>
+                        <span className="text-2xl">🌿</span>
+                        <div className="absolute bottom-1 left-1 right-1 h-1 bg-green-700/50 rounded-full">
+                          <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${plot.progress}%` }}></div>
                         </div>
                       </>
                     )}
                     {plot.state === 'ready' && (
                       <>
-                        <span className="text-3xl">🥬</span>
-                        <span className="text-xs text-green-900 font-bold">Harvest!</span>
+                        <span className="text-2xl">🥬</span>
+                        <span className="text-[10px] text-green-900 font-bold">Harvest!</span>
                       </>
                     )}
                   </button>
                 ))}
               </div>
 
-              {/* Water Tank */}
-              <div className="flex items-center gap-4 bg-blue-50 p-4 rounded-xl">
-                <span className="text-3xl">💧</span>
+              <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-xl">
+                <span className="text-2xl">💧</span>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">Water Tank</p>
-                  <div className="h-3 bg-blue-200 rounded-full overflow-hidden mt-1">
-                    <div 
-                      className="h-full bg-blue-500 transition-all"
-                      style={{ width: `${waterTank}%` }}
-                    ></div>
+                  <p className="font-semibold text-gray-900 text-sm">Water Tank</p>
+                  <div className="h-2 bg-blue-200 rounded-full overflow-hidden mt-1">
+                    <div className="h-full bg-blue-500" style={{ width: `${waterTank}%` }}></div>
                   </div>
                 </div>
                 <button 
                   onClick={() => setWaterTank(100)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold text-sm"
+                  className="px-3 py-1.5 bg-blue-500 text-white rounded-lg font-medium text-sm"
                 >
                   Refill
                 </button>
               </div>
-              
-              <button
-                onClick={() => setActiveGame(null)}
-                className="w-full py-3 mt-4 text-gray-500 font-medium"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Quiz Modal */}
-      {activeGame === 'quiz' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <span>🧠</span> UAE Quiz
-              </h2>
-              <button onClick={() => setActiveGame(null)}>
-                <X className="w-6 h-6 text-gray-400" />
-              </button>
+      {/* Leaderboard Modal */}
+      {activeGame === 'leaderboard' && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto animate-in slide-in-from-bottom">
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
             </div>
-            
-            <div className="mb-4">
-              <p className="text-sm text-gray-500 mb-2">Question 1 of 5</p>
-              <p className="text-lg font-semibold text-gray-900">What is the capital of UAE?</p>
-            </div>
-            
-            <div className="space-y-3">
-              {['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman'].map((opt, i) => (
-                <button
-                  key={i}
-                  className="w-full p-4 border border-gray-200 rounded-xl text-left hover:border-purple-400 hover:bg-purple-50 transition-colors"
-                >
-                  {opt}
+            <div className="px-5 pb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <span>🏆</span> Leaderboard
+                </h2>
+                <button onClick={closeGame} className="p-2 hover:bg-gray-100 rounded-full">
+                  <X className="w-5 h-5 text-gray-500" />
                 </button>
-              ))}
+              </div>
+              
+              <div className="space-y-2">
+                {[
+                  { rank: 1, name: 'Ahmed S.', coins: 2450, emoji: '🥇' },
+                  { rank: 2, name: 'Maria C.', coins: 2100, emoji: '🥈' },
+                  { rank: 3, name: 'Ravi K.', coins: 1850, emoji: '🥉' },
+                  { rank: 4, name: 'John D.', coins: 1500, emoji: '4' },
+                  { rank: 5, name: 'Sara M.', coins: 1200, emoji: '5' },
+                ].map((player) => (
+                  <div key={player.rank} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                    <span className="text-xl w-8 text-center">{player.emoji}</span>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{player.name}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span>🪙</span>
+                      <span className="font-bold text-purple-600">{player.coins}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <p className="text-center text-gray-500 text-sm mt-4">Top 3 win AED 500, 300, 100 monthly!</p>
             </div>
-            
-            <p className="text-center text-gray-500 text-sm mt-4">Earn 10 coins for each correct answer!</p>
           </div>
         </div>
       )}

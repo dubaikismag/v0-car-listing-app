@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, User, ChevronDown } from 'lucide-react'
+import { Search, User, ChevronDown, X, Bell } from 'lucide-react'
 import { useAppStore, uaeLocations } from '@/lib/store'
 
 interface HeaderProps {
@@ -11,8 +11,11 @@ interface HeaderProps {
 }
 
 export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
-  const { setShowAuthModal, isAuthenticated, user, selectedLocation, setSelectedLocation, searchQuery, setSearchQuery, isAdmin } = useAppStore()
+  const { setShowAuthModal, isAuthenticated, user, selectedLocation, setSelectedLocation, searchQuery, setSearchQuery, isAdmin, notifications, markNotificationRead, clearNotifications } = useAppStore()
   const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+
+  const unreadCount = notifications.filter(n => !n.read).length
 
   const handleSearch = (value: string) => {
     setSearchQuery(value)
@@ -40,13 +43,16 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
 
         {/* Right Icons */}
         <div className="flex items-center gap-2">
-          {/* Gold Bell Icon */}
-          <button className="relative p-1.5">
+          {/* Gold Bell Icon with Notification Badge */}
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-1.5"
+          >
             <div className="w-7 h-7 flex items-center justify-center">
               <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none">
                 <defs>
                   <linearGradient id="bellGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#fbbf24" />
+                    <stop offset="0%" stopColor="#fcd34d" />
                     <stop offset="50%" stopColor="#f59e0b" />
                     <stop offset="100%" stopColor="#d97706" />
                   </linearGradient>
@@ -58,11 +64,15 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
                   strokeLinecap="round" 
                   strokeLinejoin="round"
                   fill="url(#bellGradient)"
-                  fillOpacity="0.3"
+                  fillOpacity="0.4"
                 />
               </svg>
             </div>
-            <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border border-purple-700" />
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 min-w-[16px] h-4 flex items-center justify-center px-1 bg-red-500 rounded-full text-[10px] font-bold text-white border border-purple-700">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
           
           {/* Admin badge - only for admin users */}
@@ -154,6 +164,58 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
                 📍 {loc}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Notifications Panel */}
+      {showNotifications && (
+        <div className="absolute top-full right-4 w-80 bg-white rounded-xl shadow-xl max-h-96 overflow-hidden z-50 mt-2">
+          <div className="flex items-center justify-between p-3 border-b border-gray-100">
+            <h3 className="font-bold text-gray-900">Notifications</h3>
+            <div className="flex items-center gap-2">
+              {notifications.length > 0 && (
+                <button 
+                  onClick={clearNotifications}
+                  className="text-xs text-purple-600 hover:underline"
+                >
+                  Clear all
+                </button>
+              )}
+              <button onClick={() => setShowNotifications(false)}>
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+          </div>
+          <div className="max-h-72 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">
+                <Bell className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map((notification) => (
+                <button
+                  key={notification.id}
+                  onClick={() => markNotificationRead(notification.id)}
+                  className={`w-full text-left p-3 border-b border-gray-50 hover:bg-gray-50 ${
+                    !notification.read ? 'bg-purple-50/50' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-xl">{notification.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                      <p className="text-xs text-gray-500 truncate">{notification.message}</p>
+                      <p className="text-[10px] text-gray-400 mt-1">{notification.time}</p>
+                    </div>
+                    {!notification.read && (
+                      <span className="w-2 h-2 bg-purple-600 rounded-full flex-shrink-0 mt-1" />
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
           </div>
         </div>
       )}

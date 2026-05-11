@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { type Listing, useAppStore } from '@/lib/store'
-import { Heart, MapPin, Check, MessageCircle, Phone, Share2, X, ArrowLeft } from 'lucide-react'
+import { Heart, MapPin, Check, MessageCircle, Phone, Share2, X } from 'lucide-react'
 
 interface ListingCardProps {
   listing: Listing
@@ -51,7 +51,6 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
         // User cancelled or error
       }
     } else {
-      // Fallback - copy to clipboard
       navigator.clipboard.writeText(window.location.origin + `/listing/${listing.id}`)
     }
   }
@@ -73,60 +72,79 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
     NEW: 'bg-purple-600 text-white',
     SALE: 'bg-green-500 text-white',
     HIRE: 'bg-orange-500 text-white',
-    FARM: 'bg-green-500 text-white',
+    FARM: 'bg-green-600 text-white',
     FRESH: 'bg-teal-500 text-white',
-    TOOLS: 'bg-indigo-500 text-white'
+    TOOLS: 'bg-indigo-500 text-white',
+    LABOUR: 'bg-purple-600 text-white'
   }
 
   const bgColors: Record<string, string> = {
     HOT: 'bg-amber-50',
     NEW: 'bg-purple-50',
-    SALE: 'bg-white',
+    SALE: 'bg-pink-50',
     HIRE: 'bg-orange-50',
     FARM: 'bg-green-50',
     FRESH: 'bg-green-50',
-    TOOLS: 'bg-gray-50'
+    TOOLS: 'bg-gray-50',
+    LABOUR: 'bg-amber-50'
   }
+
+  // Tag icon SVG component matching the reference image
+  const TagIcon = ({ saved }: { saved: boolean }) => (
+    <svg 
+      viewBox="0 0 24 24" 
+      className={`w-5 h-5 ${saved ? 'text-purple-600' : 'text-gray-400'}`}
+      fill={saved ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path d="M7 2h10a2 2 0 012 2v16l-7-3-7 3V4a2 2 0 012-2z" />
+      {!saved && (
+        <path d="M12 6v6M9 9h6" strokeLinecap="round" />
+      )}
+    </svg>
+  )
 
   if (variant === 'horizontal') {
     return (
       <Link href={`/listing/${listing.id}`} className="block">
-        <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
-          {/* Image Section */}
-          <div className="relative h-28 flex items-center justify-center">
+        <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm h-[180px] flex flex-col ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
+          {/* Image Section - Fixed height */}
+          <div className="relative h-24 flex items-center justify-center flex-shrink-0">
             {listing.badge && (
-              <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-bold ${badgeColors[listing.badge]}`}>
+              <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold ${badgeColors[listing.badge]}`}>
                 {listing.badge}
               </span>
             )}
+            {/* Tag/Bookmark Icon */}
             <button
               onClick={handleSave}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm"
+              className="absolute top-2 right-2 p-1 rounded-full bg-white/90 shadow-sm"
             >
-              <svg className={`w-4 h-4 ${isSaved ? 'text-purple-600 fill-purple-600' : 'text-gray-400'}`} viewBox="0 0 20 20" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
-                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-              </svg>
+              <TagIcon saved={isSaved} />
             </button>
             <span className="text-4xl">{listing.emoji}</span>
           </div>
           
-          {/* Content */}
-          <div className="p-2.5">
-            <p className="text-purple-600 font-bold">{formatPrice(listing.price, listing.priceType)}</p>
-            <p className="text-gray-900 font-medium text-sm truncate">{listing.title}</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              <MapPin className="w-3 h-3 text-red-500" />
-              <span className="text-gray-500 text-xs truncate">{listing.location}</span>
+          {/* Content - Flex grow */}
+          <div className="p-2 flex-1 flex flex-col justify-between">
+            <div>
+              <p className="text-purple-600 font-bold text-sm">{formatPrice(listing.price, listing.priceType)}</p>
+              <p className="text-gray-900 font-medium text-xs truncate">{listing.title}</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <MapPin className="w-2.5 h-2.5 text-red-500 flex-shrink-0" />
+                <span className="text-gray-500 text-[10px] truncate">{listing.location}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between mt-1.5">
+            <div className="flex items-center justify-between">
               {listing.verified && (
-                <span className="flex items-center gap-0.5 text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
-                  <Check className="w-3 h-3" />
+                <span className="flex items-center gap-0.5 text-[10px] text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
+                  <Check className="w-2.5 h-2.5" />
                   Verified
                 </span>
               )}
               {listing.timeAgo && (
-                <span className="text-gray-400 text-xs">{listing.timeAgo}</span>
+                <span className="text-gray-400 text-[10px]">{listing.timeAgo}</span>
               )}
             </div>
           </div>
@@ -137,58 +155,60 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
 
   return (
     <Link href={`/listing/${listing.id}`} className="block">
-      <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
-        {/* Image Section */}
-        <div className="relative aspect-square flex items-center justify-center">
+      <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm h-[280px] flex flex-col ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
+        {/* Image Section - Fixed height */}
+        <div className="relative h-28 flex items-center justify-center flex-shrink-0">
           {listing.badge && (
-            <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-bold ${badgeColors[listing.badge]}`}>
+            <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold ${badgeColors[listing.badge]}`}>
               {listing.badge}
             </span>
           )}
+          {/* Tag/Bookmark Icon - matching reference design */}
           <button
             onClick={handleSave}
-            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm"
+            className="absolute top-2 right-2 p-1 rounded-full bg-white/90 shadow-sm"
           >
-            <svg className={`w-4 h-4 ${isSaved ? 'text-purple-600 fill-purple-600' : 'text-gray-400'}`} viewBox="0 0 20 20" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
-              <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-            </svg>
+            <TagIcon saved={isSaved} />
           </button>
           <span className="text-5xl">{listing.emoji}</span>
         </div>
         
-        {/* Content */}
-        <div className="p-3">
-          <p className="text-purple-600 font-bold text-lg">{formatPrice(listing.price, listing.priceType)}</p>
-          <p className="text-gray-900 font-medium text-sm truncate">{listing.title}</p>
-          <div className="flex items-center gap-1 mt-1">
-            <MapPin className="w-3 h-3 text-red-500" />
-            <span className="text-gray-500 text-xs">{listing.location}</span>
+        {/* Content - Flex grow */}
+        <div className="p-2.5 flex-1 flex flex-col">
+          <p className="text-purple-600 font-bold text-base">{formatPrice(listing.price, listing.priceType)}</p>
+          <p className="text-gray-900 font-medium text-xs truncate">{listing.title}</p>
+          <div className="flex items-center gap-1 mt-0.5">
+            <MapPin className="w-3 h-3 text-red-500 flex-shrink-0" />
+            <span className="text-gray-500 text-[11px] truncate">{listing.location}</span>
           </div>
           
           {/* Tags & Verified */}
-          <div className="flex flex-wrap items-center gap-1 mt-2">
+          <div className="flex flex-wrap items-center gap-1 mt-1.5 flex-1">
             {listing.verified && (
-              <span className="flex items-center gap-0.5 text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
-                <Check className="w-3 h-3" />
+              <span className="flex items-center gap-0.5 text-[10px] text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
+                <Check className="w-2.5 h-2.5" />
                 Verified
               </span>
             )}
-            {listing.tags?.slice(0, 2).map((tag) => (
-              <span key={tag} className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+            {listing.tags?.slice(0, 1).map((tag) => (
+              <span key={tag} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
                 {tag}
               </span>
             ))}
+            {listing.timeAgo && (
+              <span className="text-gray-400 text-[10px] ml-auto">{listing.timeAgo}</span>
+            )}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-2">
-              <button onClick={handleLike} className="flex items-center gap-1 text-xs text-gray-500">
-                <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+          <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-1.5">
+              <button onClick={handleLike} className="flex items-center gap-0.5 text-[10px] text-gray-500">
+                <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                 <span>{listing.likes || 0}</span>
               </button>
-              <button onClick={handleShare} className="flex items-center gap-1 text-xs text-gray-500">
-                <Share2 className="w-4 h-4" />
+              <button onClick={handleShare} className="text-gray-500">
+                <Share2 className="w-3.5 h-3.5" />
               </button>
             </div>
             <div className="flex items-center gap-1">
@@ -196,13 +216,13 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
                 onClick={handleWhatsApp}
                 className="p-1.5 bg-green-500 rounded-lg"
               >
-                <MessageCircle className="w-4 h-4 text-white" />
+                <MessageCircle className="w-3.5 h-3.5 text-white" />
               </button>
               <button 
                 onClick={handleCall}
                 className="p-1.5 bg-purple-600 rounded-lg"
               >
-                <Phone className="w-4 h-4 text-white" />
+                <Phone className="w-3.5 h-3.5 text-white" />
               </button>
             </div>
           </div>

@@ -70,6 +70,15 @@ export interface WhatsAppActive {
   activeTime: string
 }
 
+export interface Notification {
+  id: string
+  title: string
+  message: string
+  icon: string
+  time: string
+  read: boolean
+}
+
 export interface User {
   id: string
   name: string
@@ -119,6 +128,7 @@ interface AppState {
   selectedLocation: string
   searchQuery: string
   pendingCommunities: CommunityGroup[]
+  notifications: Notification[]
   
   setUser: (user: User | null) => void
   setAuthenticated: (val: boolean) => void
@@ -138,7 +148,10 @@ interface AppState {
   approveCommunity: (id: string) => void
   getFilteredListings: (category?: string, sort?: string, searchQuery?: string, location?: string) => Listing[]
   isAdmin: () => boolean
-}
+  addNotification: (notification: Omit<Notification, 'id' | 'read'>) => void
+  markNotificationRead: (id: string) => void
+  clearNotifications: () => void
+  }
 
 const sampleListings: Listing[] = [
   {
@@ -457,7 +470,7 @@ const sampleCommunityGroups: CommunityGroup[] = [
   { id: 'g39', name: 'Ukrainians Dubai', members: 680, activity: 'Support group', country: 'Ukraine', flag: '🇺🇦' },
   { id: 'g40', name: 'Polish in UAE', members: 320, activity: 'Growing', country: 'Poland', flag: '🇵🇱' },
   { id: 'g41', name: 'Romanians Dubai', members: 280, activity: 'Active weekly', country: 'Romania', flag: '🇷🇴' },
-  { id: 'g42', name: 'Greeks in UAE', members: 240, activity: 'Cultural events', country: 'Greece', flag: '🇬🇷' },
+  { id: 'g42', name: 'Greeks in UAE', members: 240, activity: 'Cultural events', country: 'Greece', flag: '���🇷' },
   { id: 'g43', name: 'Irish in Dubai', members: 380, activity: 'Social events', country: 'Ireland', flag: '🇮🇪' },
   { id: 'g44', name: 'Scandinavians UAE', members: 420, activity: 'Expat network', country: 'Sweden', flag: '🇸🇪' },
   // Americas
@@ -513,11 +526,16 @@ export const useAppStore = create<AppState>()(
       showAuthModal: false,
       coins: 45,
       dailyCheckedIn: false,
-      selectedLocation: 'Dubai, UAE',
-      searchQuery: '',
-      pendingCommunities: [],
-      
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
+  selectedLocation: 'Dubai, UAE',
+  searchQuery: '',
+  pendingCommunities: [],
+  notifications: [
+    { id: 'n1', title: 'Welcome to DubaiKismag!', message: 'Start posting ads and exploring the marketplace', icon: '👋', time: 'Just now', read: false },
+    { id: 'n2', title: 'Your ad got 5 views', message: 'Toyota Camry 2020 is getting attention!', icon: '👁️', time: '2h ago', read: false },
+    { id: 'n3', title: 'New feature: VIP Ads', message: 'Boost your ads to get 10x more views', icon: '⭐', time: '1d ago', read: true },
+  ],
+  
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
       setAuthenticated: (val) => set({ isAuthenticated: val }),
       addListing: (listing) => set((state) => ({ listings: [listing, ...state.listings] })),
       deleteListing: (id) => set((state) => ({ listings: state.listings.filter(l => l.id !== id) })),
@@ -608,11 +626,23 @@ export const useAppStore = create<AppState>()(
         
         return filtered
       },
-      isAdmin: () => {
-        const user = get().user
-        return user?.email === ADMIN_EMAIL || user?.isAdmin === true
-      }
-    }),
+  isAdmin: () => {
+  const user = get().user
+  return user?.email === ADMIN_EMAIL || user?.isAdmin === true
+  },
+  addNotification: (notification) => set((state) => ({
+    notifications: [
+      { ...notification, id: `n${Date.now()}`, read: false },
+      ...state.notifications
+    ]
+  })),
+  markNotificationRead: (id) => set((state) => ({
+    notifications: state.notifications.map(n =>
+      n.id === id ? { ...n, read: true } : n
+    )
+  })),
+  clearNotifications: () => set({ notifications: [] })
+  }),
     { name: 'dubaikismag-storage' }
   )
 )

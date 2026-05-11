@@ -128,28 +128,35 @@ export function FeaturedAds() {
           <Link
             key={listing.id}
             href={`/listing/${listing.id}`}
-            className="flex-shrink-0 w-40 bg-white rounded-xl border border-gray-100 overflow-hidden"
+            className="flex-shrink-0 w-40 h-[200px] bg-white rounded-xl border border-gray-100 overflow-hidden flex flex-col"
           >
-            <div className="relative h-24 bg-gray-50 flex items-center justify-center">
+            <div className="relative h-24 bg-gray-50 flex items-center justify-center flex-shrink-0">
               {listing.badge && (
-                <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-white text-xs font-bold ${getBadgeClass(listing.badge)}`}>
+                <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-white text-[10px] font-bold ${getBadgeClass(listing.badge)}`}>
                   {listing.badge}
                 </span>
               )}
+              {/* Tag Icon */}
+              <div className="absolute top-2 right-2 p-1 rounded-full bg-white/90 shadow-sm">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M7 2h10a2 2 0 012 2v16l-7-3-7 3V4a2 2 0 012-2z" />
+                  <path d="M12 6v6M9 9h6" strokeLinecap="round" />
+                </svg>
+              </div>
               <span className="text-4xl">{listing.emoji}</span>
             </div>
-            <div className="p-3">
+            <div className="p-2.5 flex-1 flex flex-col">
               <p className="text-purple-600 font-bold text-sm">{formatPrice(listing)}</p>
-              <p className="text-gray-900 text-sm font-medium truncate">{listing.title}</p>
-              <p className="text-gray-500 text-xs flex items-center gap-1 mt-1">
+              <p className="text-gray-900 text-xs font-medium truncate">{listing.title}</p>
+              <p className="text-gray-500 text-[10px] flex items-center gap-1 mt-0.5">
                 <span className="text-red-400">📍</span> {listing.location}
               </p>
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-auto pt-1">
                 {listing.verified && (
-                  <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded font-medium">✓ Verified</span>
+                  <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded font-medium">✓ Verified</span>
                 )}
                 {listing.timeAgo && (
-                  <span className="text-xs text-gray-400">{listing.timeAgo}</span>
+                  <span className="text-[10px] text-gray-400">{listing.timeAgo}</span>
                 )}
               </div>
             </div>
@@ -185,10 +192,10 @@ export function LabourServices() {
           <button
             key={filter}
             onClick={() => setSelectedFilter(filter)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${
+            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
               selectedFilter === filter
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 text-gray-700'
+                ? 'bg-purple-100/80 text-purple-700 backdrop-blur-sm border border-purple-200/50'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             {filter}
@@ -202,14 +209,14 @@ export function LabourServices() {
           <button
             key={profile.id}
             onClick={() => setShowDetail(profile.id)}
-            className="bg-green-50 rounded-xl p-4 text-left border border-green-100"
+            className="bg-amber-50 rounded-xl p-3 text-left border border-amber-100 h-[160px] flex flex-col"
           >
-            <span className="text-4xl block mb-2">{profile.emoji}</span>
-            <p className="text-purple-600 font-bold">AED {profile.price.toLocaleString()}/mo</p>
-            <p className="text-gray-900 font-medium text-sm">{profile.title} • {profile.origin}</p>
-            <div className="flex gap-2 mt-2">
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Available</span>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{profile.experience}</span>
+            <span className="text-4xl block mb-1">{profile.emoji}</span>
+            <p className="text-purple-600 font-bold text-sm">AED {profile.price.toLocaleString()}/mo</p>
+            <p className="text-gray-900 font-medium text-xs">{profile.title} • {profile.origin}</p>
+            <div className="flex gap-1.5 mt-auto">
+              <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Available</span>
+              <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{profile.experience}</span>
             </div>
           </button>
         ))}
@@ -293,25 +300,31 @@ export function FarmlandSection() {
           <Link
             key={listing.id}
             href={`/listing/${listing.id}`}
-            className="flex-shrink-0 w-40 bg-green-50 rounded-xl border border-green-100 overflow-hidden"
+            className="flex-shrink-0 w-40 h-[200px] bg-green-50 rounded-xl border border-green-100 overflow-hidden flex flex-col"
           >
-            <div className="relative h-20 flex items-center justify-center">
+            <div className="relative h-20 flex items-center justify-center flex-shrink-0">
               {listing.badge && (
-                <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-white text-xs font-bold ${getBadgeClass(listing.badge)}`}>
+                <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-white text-[10px] font-bold ${getBadgeClass(listing.badge)}`}>
                   {listing.badge}
                 </span>
               )}
+              {/* Tag Icon */}
+              <div className="absolute top-2 right-2 p-1 rounded-full bg-white/90 shadow-sm">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M7 2h10a2 2 0 012 2v16l-7-3-7 3V4a2 2 0 012-2z" />
+                </svg>
+              </div>
               <span className="text-4xl">{listing.emoji}</span>
             </div>
-            <div className="p-3 bg-white">
+            <div className="p-2.5 bg-white flex-1 flex flex-col">
               <p className="text-purple-600 font-bold text-sm">
                 AED {listing.price.toLocaleString()}{listing.priceType === 'yearly' ? '/yr' : listing.priceType === 'kg' ? '/kg' : ''}
               </p>
-              <p className="text-gray-900 text-sm font-medium truncate">{listing.title}</p>
-              <p className="text-gray-500 text-xs flex items-center gap-1 mt-1">
+              <p className="text-gray-900 text-xs font-medium truncate">{listing.title}</p>
+              <p className="text-gray-500 text-[10px] flex items-center gap-1 mt-0.5">
                 <span className="text-red-400">📍</span> {listing.location}
               </p>
-              <span className={`mt-2 inline-block text-xs px-2 py-0.5 rounded font-medium ${
+              <span className={`mt-auto inline-block text-[10px] px-1.5 py-0.5 rounded font-medium w-fit ${
                 listing.badge === 'FRESH' ? 'bg-teal-100 text-teal-700' : 
                 listing.badge === 'FARM' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
               }`}>
