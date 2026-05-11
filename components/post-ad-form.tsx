@@ -2,61 +2,34 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
-import { useStore, categories, type Listing } from '@/lib/store'
+import { useAppStore, categories, type Listing } from '@/lib/store'
 import { useAuth } from '@/lib/auth-context'
 import { addWatermark, validatePhoneNumber } from '@/lib/image-utils'
-import {
-  Upload,
-  X,
-  ImageIcon,
-  AlertCircle,
-  Crown,
-  Phone,
-  MessageCircle,
-  Loader2,
-  CheckCircle2,
-  Plus
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Upload, X, Loader2, AlertCircle, Plus } from 'lucide-react'
 
 interface FormErrors {
   [key: string]: string
 }
 
-interface SpecificationField {
+interface SpecField {
   key: string
   value: string
 }
 
-const categorySpecifications: Record<string, string[]> = {
-  Motors: ['Brand', 'Model', 'Year', 'Kilometers', 'Color', 'Fuel Type', 'Transmission', 'Body Type', 'Doors', 'Seats', 'Engine Size', 'Horsepower'],
-  Property: ['Property Type', 'Bedrooms', 'Bathrooms', 'Size', 'Floor', 'Parking', 'View', 'Furnishing', 'Amenities'],
-  Electronics: ['Brand', 'Model', 'Storage', 'RAM', 'Color', 'Condition', 'Warranty', 'Accessories'],
-  Furniture: ['Brand', 'Material', 'Color', 'Condition', 'Age', 'Dimensions'],
-  Fashion: ['Brand', 'Model', 'Size', 'Color', 'Condition', 'Material', 'Authenticity'],
-  Services: ['Service Type', 'Experience', 'Availability', 'Languages', 'Certifications'],
-  Jobs: ['Position', 'Company Type', 'Experience Required', 'Salary Range', 'Work Type', 'Benefits'],
-  Community: ['Event Type', 'Date', 'Time', 'Capacity', 'Age Group']
+const categorySpecs: Record<string, string[]> = {
+  Vehicles: ['Brand', 'Model', 'Year', 'Kilometers', 'Color', 'Fuel Type', 'Transmission'],
+  Property: ['Bedrooms', 'Bathrooms', 'Size', 'Furnished', 'Floor', 'Parking'],
+  Electronics: ['Brand', 'Model', 'Storage', 'RAM', 'Color', 'Condition'],
+  Jobs: ['Position', 'Experience', 'Salary', 'Work Type'],
+  Labour: ['Experience', 'Languages', 'Availability'],
+  Furniture: ['Material', 'Condition', 'Dimensions'],
+  Farmland: ['Size', 'Water', 'Soil Type']
 }
 
 export function PostAdForm() {
   const router = useRouter()
   const { user, openAuthModal } = useAuth()
-  const addListing = useStore((state) => state.addListing)
+  const addListing = useAppStore((state) => state.addListing)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number[]>([])
@@ -66,16 +39,16 @@ export function PostAdForm() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
-  const [currency, setCurrency] = useState('AED')
+  const [priceType, setPriceType] = useState<'fixed' | 'monthly' | 'yearly' | 'kg'>('fixed')
   const [category, setCategory] = useState('')
   const [subcategory, setSubcategory] = useState('')
-  const [location, setLocation] = useState('')
+  const [location, setLocation] = useState('Dubai')
   const [phone, setPhone] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [sameAsPhone, setSameAsPhone] = useState(true)
   const [images, setImages] = useState<string[]>([])
-  const [isPaid, setIsPaid] = useState(false)
-  const [specifications, setSpecifications] = useState<SpecificationField[]>([])
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'featured' | 'urgent'>('free')
+  const [specs, setSpecs] = useState<SpecField[]>([])
 
   const selectedCategory = categories.find((c) => c.id === category)
 
@@ -92,20 +65,17 @@ export function PostAdForm() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         setErrors((prev) => ({ ...prev, images: 'Only image files are allowed' }))
         continue
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setErrors((prev) => ({ ...prev, images: 'Image size must be less than 5MB' }))
         continue
       }
 
       try {
-        // Simulate upload progress
         for (let p = 0; p <= 100; p += 20) {
           await new Promise((r) => setTimeout(r, 100))
           setUploadProgress((prev) => {
@@ -115,19 +85,16 @@ export function PostAdForm() {
           })
         }
 
-        // Add watermark
         const watermarkedImage = await addWatermark(file)
         newImages.push(watermarkedImage)
       } catch (error) {
-        console.error('[v0] Image processing error:', error)
+        console.error('Image processing error:', error)
         setErrors((prev) => ({ ...prev, images: 'Failed to process image' }))
       }
     }
 
     setImages((prev) => [...prev, ...newImages])
     setUploadProgress([])
-    
-    // Clear input
     e.target.value = ''
   }, [])
 
@@ -135,47 +102,39 @@ export function PostAdForm() {
     setImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const addSpecification = () => {
-    setSpecifications((prev) => [...prev, { key: '', value: '' }])
+  const addSpec = () => {
+    setSpecs((prev) => [...prev, { key: '', value: '' }])
   }
 
-  const updateSpecification = (index: number, field: 'key' | 'value', value: string) => {
-    setSpecifications((prev) => {
+  const updateSpec = (index: number, field: 'key' | 'value', value: string) => {
+    setSpecs((prev) => {
       const updated = [...prev]
       updated[index][field] = value
       return updated
     })
   }
 
-  const removeSpecification = (index: number) => {
-    setSpecifications((prev) => prev.filter((_, i) => i !== index))
+  const removeSpec = (index: number) => {
+    setSpecs((prev) => prev.filter((_, i) => i !== index))
   }
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
-    if (!title.trim()) {
-      newErrors.title = 'Title is required'
-    } else if (title.length < 10) {
-      newErrors.title = 'Title must be at least 10 characters'
+    if (!title.trim() || title.length < 5) {
+      newErrors.title = 'Title must be at least 5 characters'
     }
 
-    if (!description.trim()) {
-      newErrors.description = 'Description is required'
-    } else if (description.length < 30) {
-      newErrors.description = 'Description must be at least 30 characters'
+    if (!description.trim() || description.length < 20) {
+      newErrors.description = 'Description must be at least 20 characters'
     }
 
-    if (!price || parseFloat(price) <= 0) {
+    if (!price || parseFloat(price) < 0) {
       newErrors.price = 'Valid price is required'
     }
 
     if (!category) {
       newErrors.category = 'Category is required'
-    }
-
-    if (!subcategory) {
-      newErrors.subcategory = 'Subcategory is required'
     }
 
     if (!location.trim()) {
@@ -195,14 +154,9 @@ export function PostAdForm() {
       newErrors.whatsapp = 'Please enter a valid WhatsApp number'
     }
 
-    if (images.length === 0) {
-      newErrors.images = 'At least one image is required'
-    }
-
-    // Validate specifications
-    const validSpecs = specifications.filter((s) => s.key.trim() && s.value.trim())
+    const validSpecs = specs.filter((s) => s.key.trim() && s.value.trim())
     if (validSpecs.length < 3) {
-      newErrors.specifications = 'Please add at least 3 specifications'
+      newErrors.specs = 'Please add at least 3 specifications'
     }
 
     setErrors(newErrors)
@@ -224,483 +178,370 @@ export function PostAdForm() {
     setIsSubmitting(true)
 
     try {
-      // Create specifications object
-      const specsObject: Record<string, string | number> = {}
-      specifications.forEach((spec) => {
+      const specsObject: Record<string, string> = {}
+      specs.forEach((spec) => {
         if (spec.key.trim() && spec.value.trim()) {
           specsObject[spec.key.trim()] = spec.value.trim()
         }
       })
+
+      const categoryEmojis: Record<string, string> = {
+        vehicles: '🚗',
+        property: '🏠',
+        jobs: '💼',
+        labour: '👷',
+        electronics: '📱',
+        furniture: '🛋️',
+        farmland: '🌾',
+        more: '📦'
+      }
 
       const newListing: Listing = {
         id: Math.random().toString(36).substring(7),
         title: title.trim(),
         description: description.trim(),
         price: parseFloat(price),
-        currency,
+        priceType: priceType === 'fixed' ? undefined : priceType,
         category: selectedCategory?.name || category,
-        subcategory,
-        images,
-        isPaid,
-        paidUntil: isPaid ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : undefined,
-        priorityLevel: isPaid ? 50 : 1,
-        createdAt: new Date(),
-        userId: user.id,
-        userPhone: phone,
-        userWhatsApp: sameAsPhone ? phone : whatsapp,
+        subcategory: subcategory || undefined,
+        emoji: categoryEmojis[category] || '📦',
         location: location.trim(),
-        specifications: specsObject,
+        phone: phone,
+        whatsapp: sameAsPhone ? phone : whatsapp,
+        images,
+        specs: specsObject,
+        isFeatured: selectedPlan !== 'free',
+        featuredDays: selectedPlan === 'featured' ? 7 : selectedPlan === 'urgent' ? 14 : 0,
+        badge: selectedPlan === 'urgent' ? 'HOT' : selectedPlan === 'featured' ? 'NEW' : undefined,
         views: 0
       }
 
       addListing(newListing)
       
-      // Simulate API call
       await new Promise((r) => setTimeout(r, 1000))
       
       router.push('/')
     } catch (error) {
-      console.error('[v0] Submit error:', error)
+      console.error('Submit error:', error)
       setErrors({ submit: 'Failed to post ad. Please try again.' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const suggestedSpecs = category ? categorySpecifications[selectedCategory?.name || ''] || [] : []
+  const suggestedSpecs = selectedCategory ? categorySpecs[selectedCategory.name] || [] : []
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Images Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Photos</CardTitle>
-          <CardDescription>
-            Add up to 10 photos. First image will be the cover. Watermark will be added automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-            {images.map((image, index) => (
-              <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image}
-                  alt={`Upload ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-                {index === 0 && (
-                  <Badge className="absolute bottom-1 left-1 text-[10px]">Cover</Badge>
-                )}
-              </div>
-            ))}
-            
-            {images.length < 10 && (
-              <label className={cn(
-                "aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors",
-                errors.images ? "border-destructive" : "border-muted-foreground/25 hover:border-amber-500"
-              )}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                {uploadProgress.length > 0 ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
-                ) : (
-                  <>
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground mt-1">Add Photo</span>
-                  </>
-                )}
-              </label>
-            )}
-          </div>
-          {errors.images && (
-            <p className="text-sm text-destructive mt-2 flex items-center gap-1">
-              <AlertCircle className="h-4 w-4" />
-              {errors.images}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+    <form onSubmit={handleSubmit} className="space-y-6 pb-32">
+      {/* Category Selection */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Category *</label>
+        <select
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value)
+            setSubcategory('')
+            const cat = categories.find((c) => c.id === e.target.value)
+            if (cat) {
+              const defaultSpecs = categorySpecs[cat.name] || []
+              setSpecs(defaultSpecs.slice(0, 4).map((key) => ({ key, value: '' })))
+            }
+          }}
+          className={`w-full p-3 rounded-xl border ${errors.category ? 'border-red-500' : 'border-gray-200'} bg-white text-gray-900`}
+        >
+          <option value="">-- Select Category --</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.emoji} {cat.name}</option>
+          ))}
+        </select>
+        {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+      </div>
 
-      {/* Basic Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Basic Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              placeholder="e.g., 2023 Mercedes-Benz S-Class S500"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className={errors.title ? 'border-destructive' : ''}
-            />
-            {errors.title && (
-              <p className="text-sm text-destructive">{errors.title}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            <Textarea
-              id="description"
-              placeholder="Describe your item in detail. Include condition, features, and any other relevant information."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className={errors.description ? 'border-destructive' : ''}
-            />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description}</p>
-            )}
-            <p className="text-xs text-muted-foreground">{description.length}/1000 characters</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">Price *</Label>
-              <Input
-                id="price"
-                type="number"
-                placeholder="0"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className={errors.price ? 'border-destructive' : ''}
-              />
-              {errors.price && (
-                <p className="text-sm text-destructive">{errors.price}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="AED">AED</SelectItem>
-                  <SelectItem value="AED/month">AED/month</SelectItem>
-                  <SelectItem value="AED/year">AED/year</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <Select 
-                value={category} 
-                onValueChange={(v) => {
-                  setCategory(v)
-                  setSubcategory('')
-                  // Add default specifications
-                  const catName = categories.find((c) => c.id === v)?.name || ''
-                  const defaultSpecs = categorySpecifications[catName] || []
-                  setSpecifications(defaultSpecs.slice(0, 6).map((key) => ({ key, value: '' })))
-                }}
-              >
-                <SelectTrigger className={errors.category ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.category && (
-                <p className="text-sm text-destructive">{errors.category}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="subcategory">Subcategory *</Label>
-              <Select 
-                value={subcategory} 
-                onValueChange={setSubcategory}
-                disabled={!category}
-              >
-                <SelectTrigger className={errors.subcategory ? 'border-destructive' : ''}>
-                  <SelectValue placeholder="Select subcategory" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedCategory?.subcategories.map((sub) => (
-                    <SelectItem key={sub} value={sub}>
-                      {sub}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.subcategory && (
-                <p className="text-sm text-destructive">{errors.subcategory}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location *</Label>
-            <Select value={location} onValueChange={setLocation}>
-              <SelectTrigger className={errors.location ? 'border-destructive' : ''}>
-                <SelectValue placeholder="Select location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Dubai Marina">Dubai Marina</SelectItem>
-                <SelectItem value="Downtown Dubai">Downtown Dubai</SelectItem>
-                <SelectItem value="Palm Jumeirah">Palm Jumeirah</SelectItem>
-                <SelectItem value="JBR">JBR</SelectItem>
-                <SelectItem value="Business Bay">Business Bay</SelectItem>
-                <SelectItem value="DIFC">DIFC</SelectItem>
-                <SelectItem value="JLT">JLT</SelectItem>
-                <SelectItem value="Deira">Deira</SelectItem>
-                <SelectItem value="Bur Dubai">Bur Dubai</SelectItem>
-                <SelectItem value="Al Barsha">Al Barsha</SelectItem>
-                <SelectItem value="Emirates Hills">Emirates Hills</SelectItem>
-                <SelectItem value="Al Quoz">Al Quoz</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.location && (
-              <p className="text-sm text-destructive">{errors.location}</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Specifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Specifications</CardTitle>
-          <CardDescription>
-            Add detailed specifications for your item (minimum 3 required)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Suggested specs buttons */}
-          {suggestedSpecs.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {suggestedSpecs.map((spec) => (
-                <Button
-                  key={spec}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (!specifications.find((s) => s.key === spec)) {
-                      setSpecifications((prev) => [...prev, { key: spec, value: '' }])
-                    }
-                  }}
-                  disabled={specifications.some((s) => s.key === spec)}
-                  className="text-xs"
-                >
-                  + {spec}
-                </Button>
-              ))}
-            </div>
-          )}
-
-          {/* Specification fields */}
-          <div className="space-y-3">
-            {specifications.map((spec, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  placeholder="Specification name"
-                  value={spec.key}
-                  onChange={(e) => updateSpecification(index, 'key', e.target.value)}
-                  className="flex-1"
-                />
-                <Input
-                  placeholder="Value"
-                  value={spec.value}
-                  onChange={(e) => updateSpecification(index, 'value', e.target.value)}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeSpecification(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={addSpecification}
-            className="w-full"
+      {/* Subcategory */}
+      {selectedCategory && selectedCategory.subcategories && (
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Subcategory</label>
+          <select
+            value={subcategory}
+            onChange={(e) => setSubcategory(e.target.value)}
+            className="w-full p-3 rounded-xl border border-gray-200 bg-white text-gray-900"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Specification
-          </Button>
-
-          {errors.specifications && (
-            <p className="text-sm text-destructive flex items-center gap-1">
-              <AlertCircle className="h-4 w-4" />
-              {errors.specifications}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Contact Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Contact Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone" className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              Phone Number *
-            </Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="+971 50 123 4567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className={errors.phone ? 'border-destructive' : ''}
-            />
-            {errors.phone && (
-              <p className="text-sm text-destructive">{errors.phone}</p>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="same-whatsapp"
-              checked={sameAsPhone}
-              onCheckedChange={setSameAsPhone}
-            />
-            <Label htmlFor="same-whatsapp" className="text-sm">
-              WhatsApp number is same as phone
-            </Label>
-          </div>
-
-          {!sameAsPhone && (
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp" className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp Number *
-              </Label>
-              <Input
-                id="whatsapp"
-                type="tel"
-                placeholder="+971 50 123 4567"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                className={errors.whatsapp ? 'border-destructive' : ''}
-              />
-              {errors.whatsapp && (
-                <p className="text-sm text-destructive">{errors.whatsapp}</p>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Premium Listing Option */}
-      <Card className={cn(
-        "border-2 transition-colors",
-        isPaid ? "border-amber-500 bg-amber-500/5" : ""
-      )}>
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <div className={cn(
-              "h-12 w-12 rounded-full flex items-center justify-center shrink-0",
-              isPaid ? "bg-amber-500" : "bg-muted"
-            )}>
-              <Crown className={cn(
-                "h-6 w-6",
-                isPaid ? "text-white" : "text-muted-foreground"
-              )} />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">Featured Listing</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Get more visibility with priority placement
-                  </p>
-                </div>
-                <Switch
-                  checked={isPaid}
-                  onCheckedChange={setIsPaid}
-                />
-              </div>
-              {isPaid && (
-                <div className="mt-3 p-3 bg-amber-500/10 rounded-lg">
-                  <p className="text-sm">
-                    <span className="font-semibold text-amber-600">Benefits:</span>
-                  </p>
-                  <ul className="text-sm text-muted-foreground mt-1 space-y-1">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-3 w-3 text-amber-500" />
-                      Top position in search results
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-3 w-3 text-amber-500" />
-                      Featured badge on your listing
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-3 w-3 text-amber-500" />
-                      30 days of premium visibility
-                    </li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Payment link will be provided after submission
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Submit Button */}
-      {errors.submit && (
-        <p className="text-sm text-destructive text-center">{errors.submit}</p>
+            <option value="">-- Select Subcategory --</option>
+            {selectedCategory.subcategories.map((sub) => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
+          </select>
+        </div>
       )}
 
-      <Button
+      {/* Title */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Ad Title *</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. Toyota Camry 2020 - Dubai Marina"
+          className={`w-full p-3 rounded-xl border ${errors.title ? 'border-red-500' : 'border-gray-200'} bg-white`}
+        />
+        {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+      </div>
+
+      {/* Price */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Price (AED) *</label>
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="0 for free / negotiable"
+            className={`w-full p-3 rounded-xl border ${errors.price ? 'border-red-500' : 'border-gray-200'} bg-white`}
+          />
+          {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Price Type</label>
+          <select
+            value={priceType}
+            onChange={(e) => setPriceType(e.target.value as typeof priceType)}
+            className="w-full p-3 rounded-xl border border-gray-200 bg-white"
+          >
+            <option value="fixed">Fixed</option>
+            <option value="monthly">/month</option>
+            <option value="yearly">/year</option>
+            <option value="kg">/kg</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Description */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Description *</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe item, condition, availability..."
+          rows={4}
+          className={`w-full p-3 rounded-xl border ${errors.description ? 'border-red-500' : 'border-gray-200'} bg-white`}
+        />
+        {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+      </div>
+
+      {/* Location */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Location *</label>
+        <select
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className={`w-full p-3 rounded-xl border ${errors.location ? 'border-red-500' : 'border-gray-200'} bg-white`}
+        >
+          <option value="Dubai">Dubai</option>
+          <option value="Abu Dhabi">Abu Dhabi</option>
+          <option value="Sharjah">Sharjah</option>
+          <option value="Ajman">Ajman</option>
+          <option value="RAK">RAK</option>
+          <option value="Fujairah">Fujairah</option>
+          <option value="Al Ain">Al Ain</option>
+        </select>
+        {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
+      </div>
+
+      {/* Phone / WhatsApp */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Phone / WhatsApp *</label>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="+971 50 000 0000"
+          className={`w-full p-3 rounded-xl border ${errors.phone ? 'border-red-500' : 'border-gray-200'} bg-white`}
+        />
+        {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+        
+        <div className="flex items-center gap-2 mt-2">
+          <input
+            type="checkbox"
+            id="sameAsPhone"
+            checked={sameAsPhone}
+            onChange={(e) => setSameAsPhone(e.target.checked)}
+            className="rounded"
+          />
+          <label htmlFor="sameAsPhone" className="text-sm text-gray-600">WhatsApp same as phone</label>
+        </div>
+
+        {!sameAsPhone && (
+          <input
+            type="tel"
+            value={whatsapp}
+            onChange={(e) => setWhatsapp(e.target.value)}
+            placeholder="WhatsApp number"
+            className={`w-full p-3 rounded-xl border ${errors.whatsapp ? 'border-red-500' : 'border-gray-200'} bg-white mt-2`}
+          />
+        )}
+        {errors.whatsapp && <p className="text-red-500 text-sm mt-1">{errors.whatsapp}</p>}
+      </div>
+
+      {/* Photos */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Photos</label>
+        <div className="grid grid-cols-4 gap-2">
+          {images.map((image, index) => (
+            <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          
+          {images.length < 8 && (
+            <label className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-purple-400">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              {uploadProgress.length > 0 ? (
+                <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+              ) : (
+                <>
+                  <span className="text-2xl">📷</span>
+                  <span className="text-xs text-gray-500 mt-1">Tap to add up to 8 photos</span>
+                </>
+              )}
+            </label>
+          )}
+        </div>
+        {errors.images && <p className="text-red-500 text-sm mt-1 flex items-center gap-1"><AlertCircle className="w-4 h-4" />{errors.images}</p>}
+      </div>
+
+      {/* Specifications */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Specifications (min 3) *</label>
+        
+        {/* Suggested specs */}
+        {suggestedSpecs.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {suggestedSpecs.map((spec) => (
+              <button
+                key={spec}
+                type="button"
+                onClick={() => {
+                  if (!specs.find((s) => s.key === spec)) {
+                    setSpecs((prev) => [...prev, { key: spec, value: '' }])
+                  }
+                }}
+                disabled={specs.some((s) => s.key === spec)}
+                className="px-2 py-1 text-xs bg-purple-50 text-purple-600 rounded-full disabled:opacity-50"
+              >
+                + {spec}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {specs.map((spec, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                type="text"
+                value={spec.key}
+                onChange={(e) => updateSpec(index, 'key', e.target.value)}
+                placeholder="Spec name"
+                className="flex-1 p-2 rounded-lg border border-gray-200 text-sm"
+              />
+              <input
+                type="text"
+                value={spec.value}
+                onChange={(e) => updateSpec(index, 'value', e.target.value)}
+                placeholder="Value"
+                className="flex-1 p-2 rounded-lg border border-gray-200 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => removeSpec(index)}
+                className="p-2 text-gray-400 hover:text-red-500"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={addSpec}
+          className="w-full mt-2 p-2 border border-dashed border-gray-300 rounded-lg text-gray-500 text-sm flex items-center justify-center gap-1 hover:border-purple-400 hover:text-purple-600"
+        >
+          <Plus className="w-4 h-4" /> Add Specification
+        </button>
+        {errors.specs && <p className="text-red-500 text-sm mt-1">{errors.specs}</p>}
+      </div>
+
+      {/* Select Plan */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Select Plan</label>
+        <div className="grid grid-cols-3 gap-3">
+          <button
+            type="button"
+            onClick={() => setSelectedPlan('free')}
+            className={`p-3 rounded-xl border-2 text-center ${selectedPlan === 'free' ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}`}
+          >
+            <p className="font-bold text-sm">FREE</p>
+            <p className="text-purple-600 font-bold">AED 0</p>
+            <p className="text-xs text-gray-500">14 days</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedPlan('featured')}
+            className={`p-3 rounded-xl border-2 text-center ${selectedPlan === 'featured' ? 'border-amber-500 bg-amber-50' : 'border-gray-200'}`}
+          >
+            <p className="font-bold text-sm flex items-center justify-center gap-1">⭐ FEATURED</p>
+            <p className="text-amber-600 font-bold">AED 20</p>
+            <p className="text-xs text-gray-500">Top of list</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedPlan('urgent')}
+            className={`p-3 rounded-xl border-2 text-center ${selectedPlan === 'urgent' ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}
+          >
+            <p className="font-bold text-sm flex items-center justify-center gap-1">🚀 URGENT</p>
+            <p className="text-red-600 font-bold">AED 50</p>
+            <p className="text-xs text-gray-500">5x views</p>
+          </button>
+        </div>
+      </div>
+
+      {/* Submit Error */}
+      {errors.submit && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+          {errors.submit}
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <button
         type="submit"
-        className="w-full h-12 bg-amber-500 hover:bg-amber-600"
         disabled={isSubmitting}
+        className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {isSubmitting ? (
           <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            <Loader2 className="w-5 h-5 animate-spin" />
             Posting...
           </>
         ) : (
-          <>
-            <ImageIcon className="h-4 w-4 mr-2" />
-            Post Ad
-          </>
+          `Post Ad Now — ${selectedPlan === 'free' ? 'FREE' : selectedPlan === 'featured' ? 'AED 20' : 'AED 50'}`
         )}
-      </Button>
+      </button>
     </form>
   )
 }

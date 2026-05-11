@@ -1,66 +1,26 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 import { categories } from '@/lib/store'
-import { 
-  Car, 
-  Home, 
-  Smartphone, 
-  Sofa,
-  Shirt,
-  Briefcase,
-  Building,
-  Users
-} from 'lucide-react'
-
-const iconMap: Record<string, React.ElementType> = {
-  car: Car,
-  home: Home,
-  smartphone: Smartphone,
-  sofa: Sofa,
-  shirt: Shirt,
-  briefcase: Briefcase,
-  building: Building,
-  users: Users
-}
-
-const colorMap: Record<string, string> = {
-  motors: 'bg-blue-500',
-  property: 'bg-green-500',
-  electronics: 'bg-purple-500',
-  furniture: 'bg-orange-500',
-  fashion: 'bg-pink-500',
-  services: 'bg-teal-500',
-  jobs: 'bg-indigo-500',
-  community: 'bg-rose-500'
-}
 
 export function Categories() {
-  const router = useRouter()
-
   return (
-    <section className="py-6">
-      <h2 className="text-lg font-semibold mb-4">Browse Categories</h2>
-      <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-        {categories.map((category) => {
-          const Icon = iconMap[category.icon] || Briefcase
-          const bgColor = colorMap[category.id] || 'bg-gray-500'
-          
-          return (
-            <Button
-              key={category.id}
-              variant="ghost"
-              className="flex flex-col items-center gap-2 h-auto py-3 hover:bg-muted"
-              onClick={() => router.push(`/browse?category=${category.id}`)}
-            >
-              <div className={`h-12 w-12 rounded-full ${bgColor} flex items-center justify-center`}>
-                <Icon className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xs font-medium text-center">{category.name}</span>
-            </Button>
-          )
-        })}
+    <section className="py-4">
+      <div className="flex items-center justify-between px-4 mb-3">
+        <h2 className="text-lg font-bold text-gray-900">Browse Categories</h2>
+        <Link href="/browse" className="text-purple-600 text-sm font-medium">All &rsaquo;</Link>
+      </div>
+      <div className="grid grid-cols-4 gap-3 px-4">
+        {categories.map((category) => (
+          <Link
+            key={category.id}
+            href={`/browse?category=${category.id}`}
+            className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-sm transition-all"
+          >
+            <span className="text-3xl">{category.emoji}</span>
+            <span className="text-xs font-medium text-center text-gray-700">{category.name}</span>
+          </Link>
+        ))}
       </div>
     </section>
   )

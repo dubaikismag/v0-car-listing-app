@@ -373,14 +373,14 @@ export const useAppStore = create<AppState>()(
 )
 
 export const categories = [
-  { id: 'vehicles', name: 'Vehicles', emoji: '🚗' },
-  { id: 'property', name: 'Property', emoji: '🏠' },
-  { id: 'jobs', name: 'Jobs', emoji: '💼' },
-  { id: 'labour', name: 'Labour', emoji: '👷' },
-  { id: 'electronics', name: 'Electronics', emoji: '📱' },
-  { id: 'furniture', name: 'Furniture', emoji: '🛋️' },
-  { id: 'farmland', name: 'Farmland', emoji: '🌾' },
-  { id: 'more', name: 'More...', emoji: '📦' }
+  { id: 'vehicles', name: 'Vehicles', emoji: '🚗', subcategories: ['Cars', 'Motorcycles', 'Trucks', 'Boats', 'Parts'] },
+  { id: 'property', name: 'Property', emoji: '🏠', subcategories: ['Apartments', 'Villas', 'Rooms', 'Commercial', 'Land'] },
+  { id: 'jobs', name: 'Jobs', emoji: '💼', subcategories: ['Full-time', 'Part-time', 'Remote', 'Freelance', 'Internship'] },
+  { id: 'labour', name: 'Labour', emoji: '👷', subcategories: ['Electrician', 'Plumber', 'Painter', 'AC Tech', 'Driver', 'Cleaner'] },
+  { id: 'electronics', name: 'Electronics', emoji: '📱', subcategories: ['Phones', 'Laptops', 'TVs', 'Cameras', 'Gaming', 'Accessories'] },
+  { id: 'furniture', name: 'Furniture', emoji: '🛋️', subcategories: ['Sofas', 'Beds', 'Tables', 'Chairs', 'Storage', 'Outdoor'] },
+  { id: 'farmland', name: 'Farmland', emoji: '🌾', subcategories: ['Land', 'Equipment', 'Seeds', 'Livestock', 'Produce'] },
+  { id: 'more', name: 'More...', emoji: '📦', subcategories: ['Fashion', 'Sports', 'Books', 'Toys', 'Art', 'Other'] }
 ]
 
 export const topTabs = [
