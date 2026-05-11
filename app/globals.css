@@ -191,3 +191,60 @@
 .slide-in-from-bottom {
   animation: slideIn 0.3s ease-out forwards;
 }
+
+/* Premium/Featured card glow animation */
+@keyframes premiumGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.4), 0 0 16px rgba(251, 191, 36, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(251, 191, 36, 0.6), 0 0 24px rgba(251, 191, 36, 0.3);
+  }
+}
+
+.premium-card {
+  animation: premiumGlow 2s ease-in-out infinite;
+  border: 2px solid rgba(251, 191, 36, 0.5) !important;
+}
+
+/* Premium badge shine effect */
+@keyframes badgeShine {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.premium-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-badge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: badgeShine 3s linear infinite;
+}
+
+/* VIP star sparkle */
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+.sparkle-star {
+  animation: sparkle 1.5s ease-in-out infinite;
+}

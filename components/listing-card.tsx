@@ -68,15 +68,18 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
   }
 
   const badgeColors: Record<string, string> = {
-    HOT: 'bg-amber-500 text-white',
-    NEW: 'bg-purple-600 text-white',
-    SALE: 'bg-green-500 text-white',
-    HIRE: 'bg-orange-500 text-white',
-    FARM: 'bg-green-600 text-white',
-    FRESH: 'bg-teal-500 text-white',
-    TOOLS: 'bg-indigo-500 text-white',
-    LABOUR: 'bg-purple-600 text-white'
+    HOT: 'bg-amber-400/90 text-amber-900 backdrop-blur-sm border border-amber-300/50',
+    NEW: 'bg-purple-400/90 text-purple-900 backdrop-blur-sm border border-purple-300/50',
+    SALE: 'bg-green-400/90 text-green-900 backdrop-blur-sm border border-green-300/50',
+    HIRE: 'bg-orange-400/90 text-orange-900 backdrop-blur-sm border border-orange-300/50',
+    FARM: 'bg-green-400/90 text-green-900 backdrop-blur-sm border border-green-300/50',
+    FRESH: 'bg-teal-400/90 text-teal-900 backdrop-blur-sm border border-teal-300/50',
+    TOOLS: 'bg-indigo-400/90 text-indigo-900 backdrop-blur-sm border border-indigo-300/50',
+    LABOUR: 'bg-purple-400/90 text-purple-900 backdrop-blur-sm border border-purple-300/50'
   }
+
+  // Check if listing is premium/featured for special animation
+  const isPremium = listing.badge === 'HOT' || listing.featured || listing.vip
 
   const bgColors: Record<string, string> = {
     HOT: 'bg-amber-50',
@@ -155,11 +158,17 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
 
   return (
     <Link href={`/listing/${listing.id}`} className="block">
-      <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm h-[280px] flex flex-col ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
+      <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm h-[280px] flex flex-col ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'} ${isPremium ? 'premium-card' : ''}`}>
         {/* Image Section - Fixed height */}
         <div className="relative h-28 flex items-center justify-center flex-shrink-0">
+          {/* Premium Star Indicator */}
+          {isPremium && (
+            <span className="absolute top-2 left-2 sparkle-star text-lg z-10">
+              ⭐
+            </span>
+          )}
           {listing.badge && (
-            <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold ${badgeColors[listing.badge]}`}>
+            <span className={`absolute ${isPremium ? 'top-2 left-8' : 'top-2 left-2'} px-2 py-0.5 rounded text-[10px] font-bold ${badgeColors[listing.badge]} ${isPremium ? 'premium-badge' : ''}`}>
               {listing.badge}
             </span>
           )}

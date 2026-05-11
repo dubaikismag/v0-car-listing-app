@@ -10,7 +10,7 @@ export interface Listing {
   subcategory?: string
   location: string
   emoji: string
-  badge?: 'HOT' | 'NEW' | 'SALE' | 'HIRE' | 'FARM' | 'FRESH' | 'TOOLS'
+  badge?: 'HOT' | 'NEW' | 'SALE' | 'HIRE' | 'FARM' | 'FRESH' | 'TOOLS' | 'LABOUR'
   verified?: boolean
   timeAgo?: string
   phone: string
@@ -19,10 +19,14 @@ export interface Listing {
   images: string[]
   specs?: Record<string, string>
   isFeatured?: boolean
+  featured?: boolean
+  vip?: boolean
   featuredDays?: number
   views?: number
   likes?: number
   shares?: number
+  messages?: number
+  contact?: string
   tags?: string[]
 }
 
@@ -135,6 +139,8 @@ interface AppState {
   addListing: (listing: Listing) => void
   deleteListing: (id: string) => void
   toggleSavedAd: (id: string) => void
+  removeFavorite: (id: string) => void
+  leaveGroup: (groupId: string) => void
   toggleLikedAd: (id: string) => void
   shareListing: (id: string) => void
   setCurrentTab: (tab: string) => void
@@ -543,6 +549,14 @@ export const useAppStore = create<AppState>()(
         savedAds: state.savedAds.includes(id) 
           ? state.savedAds.filter(savedId => savedId !== id)
           : [...state.savedAds, id]
+      })),
+      removeFavorite: (id) => set((state) => ({
+        savedAds: state.savedAds.filter(savedId => savedId !== id)
+      })),
+      leaveGroup: (groupId) => set((state) => ({
+        communityGroups: state.communityGroups.map(g => 
+          g.id === groupId ? { ...g, joined: false } : g
+        )
       })),
       toggleLikedAd: (id) => set((state) => ({
         likedAds: state.likedAds.includes(id) 

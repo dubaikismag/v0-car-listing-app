@@ -67,10 +67,10 @@ function BrowseContent() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-all ${
                 selectedCategory === cat.id
-                  ? 'bg-purple-600 text-white border-purple-600'
-                  : 'bg-white border-gray-200 text-gray-600'
+                  ? 'bg-purple-100/80 text-purple-700 border-purple-300/60 backdrop-blur-sm shadow-sm'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
               {cat.emoji && <span>{cat.emoji}</span>}
@@ -85,10 +85,10 @@ function BrowseContent() {
             <button
               key={sort.id}
               onClick={() => setSelectedSort(sort.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                 selectedSort === sort.id
-                  ? 'bg-amber-400 text-purple-900'
-                  : 'bg-white border border-gray-200 text-gray-600'
+                  ? 'bg-amber-100/80 text-amber-700 border border-amber-300/60 backdrop-blur-sm shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
               <span>{sort.emoji}</span>

@@ -8,7 +8,6 @@ const tabs = [
   { id: 'Jobs', emoji: '💼', href: '/browse?category=Jobs' },
   { id: 'Rooms', emoji: '🏘️', href: '/browse?category=Property' },
   { id: 'Ads', emoji: '📋', href: '/browse' },
-  { id: 'Reels', emoji: '🎬', href: '/reels' },
   { id: 'Wanted', emoji: '🤝', href: '/wanted' },
   { id: 'Groups', emoji: '🌍', href: '/groups' },
   { id: 'Fun', emoji: '🎮', href: '/fun' },
@@ -39,7 +38,6 @@ export function TopTabs({ onTabChange }: TopTabsProps) {
       if (category === 'Property') return 'Rooms'
       return 'Ads'
     }
-    if (pathname === '/reels') return 'Reels'
     if (pathname === '/wanted') return 'Wanted'
     if (pathname === '/groups') return 'Groups'
     if (pathname === '/fun') return 'Fun'
