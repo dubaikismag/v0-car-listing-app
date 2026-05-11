@@ -1,260 +1,220 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
-import { useAuth } from '@/lib/auth-context'
-import { Phone, Mail, ArrowLeft, Shield, CheckCircle2 } from 'lucide-react'
+import { X, Phone, Mail, ArrowLeft } from 'lucide-react'
+import { useAppStore } from '@/lib/store'
+
+type Step = 'method' | 'input' | 'otp' | 'name'
 
 export function AuthModal() {
-  const {
-    isAuthModalOpen,
-    closeAuthModal,
-    authStep,
-    setAuthStep,
-    authMethod,
-    setAuthMethod,
-    authValue,
-    setAuthValue,
-    login
-  } = useAuth()
-
-  const [otp, setOtp] = useState('')
+  const { showAuthModal, setShowAuthModal, setUser, setAuthenticated } = useAppStore()
+  const [step, setStep] = useState<Step>('method')
+  const [method, setMethod] = useState<'phone' | 'email'>('phone')
+  const [inputValue, setInputValue] = useState('')
+  const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [name, setName] = useState('')
-  const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const validatePhone = (phone: string) => {
-    const phoneRegex = /^\+?[1-9]\d{9,14}$/
-    return phoneRegex.test(phone.replace(/\s/g, ''))
-  }
+  if (!showAuthModal) return null
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
-  const handleSendOTP = async () => {
-    setError('')
-    
-    if (authMethod === 'phone' && !validatePhone(authValue)) {
-      setError('Please enter a valid phone number (e.g., +971501234567)')
-      return
-    }
-    
-    if (authMethod === 'email' && !validateEmail(authValue)) {
-      setError('Please enter a valid email address')
-      return
-    }
-
+  const handleSendOtp = () => {
+    if (!inputValue) return
     setIsLoading(true)
-    // Simulate OTP sending
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsLoading(false)
-    setAuthStep('otp')
+    setTimeout(() => {
+      setIsLoading(false)
+      setStep('otp')
+    }, 1000)
   }
 
-  const handleVerifyOTP = async () => {
-    setError('')
-    
-    if (otp.length !== 6) {
-      setError('Please enter the complete 6-digit OTP')
-      return
-    }
-
+  const handleVerifyOtp = () => {
+    const otpValue = otp.join('')
+    if (otpValue.length !== 6) return
     setIsLoading(true)
-    // Simulate OTP verification (accept any 6-digit code for demo)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    setAuthStep('name')
+    setTimeout(() => {
+      setIsLoading(false)
+      setStep('name')
+    }, 1000)
   }
 
   const handleComplete = () => {
-    if (!name.trim()) {
-      setError('Please enter your name')
-      return
-    }
-    login(name.trim())
+    if (!name.trim()) return
+    setUser({
+      id: '1',
+      name: name.trim(),
+      phone: method === 'phone' ? inputValue : undefined,
+      email: method === 'email' ? inputValue : undefined,
+      location: 'Dubai, UAE',
+      memberSince: '2024',
+      verified: true,
+      activeAds: 12,
+      coins: 45,
+      rating: 4.9,
+      sold: 86
+    })
+    setAuthenticated(true)
+    setShowAuthModal(false)
+    resetForm()
   }
 
-  const handleBack = () => {
-    setError('')
-    if (authStep === 'otp') {
-      setAuthStep('input')
-      setOtp('')
-    } else if (authStep === 'name') {
-      setAuthStep('otp')
-      setName('')
-    } else {
-      setAuthMethod(null)
-      setAuthValue('')
+  const resetForm = () => {
+    setStep('method')
+    setMethod('phone')
+    setInputValue('')
+    setOtp(['', '', '', '', '', ''])
+    setName('')
+  }
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) return
+    const newOtp = [...otp]
+    newOtp[index] = value
+    setOtp(newOtp)
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`)
+      nextInput?.focus()
     }
   }
 
   return (
-    <Dialog open={isAuthModalOpen} onOpenChange={(open) => !open && closeAuthModal()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {authStep !== 'input' && (
-              <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <span>
-              {authStep === 'input' && 'Sign In to DubaiKisMag'}
-              {authStep === 'otp' && 'Verify OTP'}
-              {authStep === 'name' && 'Complete Profile'}
-            </span>
-          </DialogTitle>
-        </DialogHeader>
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
+      <div className="w-full max-w-lg bg-white rounded-t-3xl animate-in slide-in-from-bottom duration-300">
+        <div className="flex justify-center pt-3 pb-2">
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+        </div>
 
-        <div className="space-y-6 py-4">
-          {authStep === 'input' && !authMethod && (
-            <div className="space-y-4">
-              <p className="text-muted-foreground text-sm text-center">
-                Choose how you want to sign in
-              </p>
-              <div className="space-y-3">
-                <Button
-                  variant="outline"
-                  className="w-full h-14 justify-start gap-4"
-                  onClick={() => setAuthMethod('phone')}
-                >
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium">Continue with Phone</div>
-                    <div className="text-xs text-muted-foreground">We&apos;ll send you an OTP</div>
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full h-14 justify-start gap-4"
-                  onClick={() => setAuthMethod('email')}
-                >
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium">Continue with Email</div>
-                    <div className="text-xs text-muted-foreground">Get OTP on your email</div>
-                  </div>
-                </Button>
-              </div>
-            </div>
+        <div className="flex items-center justify-between px-4 pb-4">
+          {step !== 'method' ? (
+            <button onClick={() => setStep(step === 'otp' ? 'input' : step === 'name' ? 'otp' : 'method')}>
+              <ArrowLeft className="w-6 h-6 text-gray-600" />
+            </button>
+          ) : (
+            <div className="w-6" />
           )}
+          <h2 className="text-lg font-bold text-gray-900">
+            {step === 'method' && 'Sign In / Register'}
+            {step === 'input' && (method === 'phone' ? 'Enter Phone Number' : 'Enter Email')}
+            {step === 'otp' && 'Verify OTP'}
+            {step === 'name' && 'Your Name'}
+          </h2>
+          <button onClick={() => { setShowAuthModal(false); resetForm() }}>
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
 
-          {authStep === 'input' && authMethod && (
+        <div className="px-6 pb-8">
+          {step === 'method' && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="auth-input">
-                  {authMethod === 'phone' ? 'Phone Number' : 'Email Address'}
-                </Label>
-                <Input
-                  id="auth-input"
-                  type={authMethod === 'phone' ? 'tel' : 'email'}
-                  placeholder={authMethod === 'phone' ? '+971 50 123 4567' : 'your@email.com'}
-                  value={authValue}
-                  onChange={(e) => setAuthValue(e.target.value)}
-                  className="h-12"
-                />
-                {error && <p className="text-sm text-destructive">{error}</p>}
-              </div>
-              <Button 
-                className="w-full h-12" 
-                onClick={handleSendOTP}
-                disabled={isLoading || !authValue}
+              <p className="text-gray-600 text-center mb-6">Choose how you want to sign in</p>
+              <button
+                onClick={() => { setMethod('phone'); setStep('input') }}
+                className="w-full flex items-center gap-4 p-4 bg-purple-50 rounded-xl border-2 border-purple-200 hover:border-purple-400"
               >
-                {isLoading ? 'Sending OTP...' : 'Send OTP'}
-              </Button>
-              <Button variant="ghost" className="w-full" onClick={() => setAuthMethod(null)}>
-                Use different method
-              </Button>
+                <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                  <Phone className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Mobile Number</p>
+                  <p className="text-sm text-gray-500">Receive OTP via SMS</p>
+                </div>
+              </button>
+              <button
+                onClick={() => { setMethod('email'); setStep('input') }}
+                className="w-full flex items-center gap-4 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 hover:border-gray-400"
+              >
+                <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+                  <Mail className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Email Address</p>
+                  <p className="text-sm text-gray-500">Receive OTP via Email</p>
+                </div>
+              </button>
             </div>
           )}
 
-          {authStep === 'otp' && (
+          {step === 'input' && (
             <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <Shield className="h-8 w-8 text-primary" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Enter the 6-digit code sent to
-                  <br />
-                  <span className="font-medium text-foreground">{authValue}</span>
-                </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {method === 'phone' ? 'Phone Number' : 'Email Address'}
+                </label>
+                <input
+                  type={method === 'phone' ? 'tel' : 'email'}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder={method === 'phone' ? '+971 50 000 0000' : 'you@example.com'}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none text-lg"
+                />
               </div>
-              <div className="flex justify-center">
-                <InputOTP
-                  maxLength={6}
-                  value={otp}
-                  onChange={(value) => setOtp(value)}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
+              <button
+                onClick={handleSendOtp}
+                disabled={!inputValue || isLoading}
+                className="w-full py-4 bg-purple-600 text-white font-semibold rounded-xl disabled:opacity-50"
+              >
+                {isLoading ? 'Sending...' : 'Send OTP'}
+              </button>
+            </div>
+          )}
+
+          {step === 'otp' && (
+            <div className="space-y-6">
+              <p className="text-gray-600 text-center">
+                Enter the 6-digit code sent to<br />
+                <span className="font-semibold text-gray-900">{inputValue}</span>
+              </p>
+              <div className="flex justify-center gap-2">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    className="w-12 h-14 border-2 border-gray-200 rounded-xl text-center text-xl font-bold focus:border-purple-500 focus:outline-none"
+                  />
+                ))}
               </div>
-              {error && <p className="text-sm text-destructive text-center">{error}</p>}
-              <Button 
-                className="w-full h-12" 
-                onClick={handleVerifyOTP}
-                disabled={isLoading || otp.length !== 6}
+              <button
+                onClick={handleVerifyOtp}
+                disabled={otp.join('').length !== 6 || isLoading}
+                className="w-full py-4 bg-purple-600 text-white font-semibold rounded-xl disabled:opacity-50"
               >
                 {isLoading ? 'Verifying...' : 'Verify OTP'}
-              </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Didn&apos;t receive the code?{' '}
-                <Button variant="link" className="px-0 h-auto" onClick={handleSendOTP}>
-                  Resend
-                </Button>
-              </p>
+              </button>
             </div>
           )}
 
-          {authStep === 'name' && (
+          {step === 'name' && (
             <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="h-8 w-8 text-green-500" />
+              <div className="text-center mb-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-3xl">✓</span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Verified successfully! Enter your name to complete
-                </p>
+                <p className="text-green-600 font-semibold">Verified!</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Enter your name"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">What should we call you?</label>
+                <input
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-12"
+                  placeholder="Your name"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none text-lg"
                 />
-                {error && <p className="text-sm text-destructive">{error}</p>}
               </div>
-              <Button 
-                className="w-full h-12" 
+              <button
                 onClick={handleComplete}
                 disabled={!name.trim()}
+                className="w-full py-4 bg-purple-600 text-white font-semibold rounded-xl disabled:opacity-50"
               >
-                Complete Sign In
-              </Button>
+                Complete Sign Up
+              </button>
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   )
 }

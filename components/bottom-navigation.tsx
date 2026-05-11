@@ -1,75 +1,58 @@
-"use client"
+'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
-import { Home, Search, Plus, Gamepad2, Menu } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useAuth } from '@/lib/auth-context'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Plus } from 'lucide-react'
 
 const navItems = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Browse', href: '/browse', icon: Search },
-  { name: 'Post', href: '/post', icon: Plus, isCenter: true },
-  { name: 'Fun', href: '/fun', icon: Gamepad2 },
-  { name: 'More', href: '/more', icon: Menu },
+  { href: '/', label: 'Home', emoji: '🏠' },
+  { href: '/browse', label: 'Browse', emoji: '💼' },
+  { href: '/post', label: '', isCenter: true },
+  { href: '/fun', label: 'Fun', emoji: '🎮' },
+  { href: '/more', label: 'More', emoji: '💬' }
 ]
 
 export function BottomNavigation() {
   const pathname = usePathname()
-  const router = useRouter()
-  const { user, openAuthModal } = useAuth()
-
-  const handleNavigation = (href: string, requiresAuth: boolean = false) => {
-    if (requiresAuth && !user) {
-      openAuthModal()
-      return
-    }
-    router.push(href)
-  }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border safe-area-pb">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href
-          const Icon = item.icon
-
+          
           if (item.isCenter) {
             return (
-              <button
-                key={item.name}
-                onClick={() => handleNavigation(item.href, true)}
-                className="relative -mt-6"
+              <Link
+                key={item.href}
+                href={item.href}
+                className="relative -mt-5"
               >
-                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30 active:scale-95 transition-transform">
-                  <Icon className="h-6 w-6 text-white" />
+                <div className="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-300">
+                  <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
                 </div>
-                <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-medium text-muted-foreground">
-                  {item.name}
-                </span>
-              </button>
+              </Link>
             )
           }
 
           return (
-            <button
-              key={item.name}
-              onClick={() => handleNavigation(item.href)}
-              className={cn(
-                "flex flex-col items-center justify-center w-16 h-full gap-0.5 transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground"
-              )}
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center justify-center gap-0.5 min-w-[60px] py-1 ${
+                isActive ? 'text-purple-700' : 'text-gray-500'
+              }`}
             >
-              <Icon className={cn("h-5 w-5", isActive && "text-amber-500")} />
-              <span className={cn(
-                "text-[10px] font-medium",
-                isActive && "text-amber-500"
-              )}>
-                {item.name}
+              <span className="text-2xl">{item.emoji}</span>
+              <span className={`text-xs font-medium ${isActive ? 'text-purple-700' : 'text-gray-500'}`}>
+                {item.label}
               </span>
-            </button>
+            </Link>
           )
         })}
       </div>
+      {/* Safe area padding for iOS */}
+      <div className="h-safe-area-inset-bottom bg-white" />
     </nav>
   )
 }
