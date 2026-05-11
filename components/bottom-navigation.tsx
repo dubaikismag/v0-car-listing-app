@@ -28,7 +28,7 @@ export function BottomNavigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative -mb-3"
+                className="relative -mb-1"
               >
                 <div className="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center shadow-lg shadow-purple-300">
                   <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
