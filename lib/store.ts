@@ -21,6 +21,9 @@ export interface Listing {
   isFeatured?: boolean
   featuredDays?: number
   views?: number
+  likes?: number
+  shares?: number
+  tags?: string[]
 }
 
 export interface LabourProfile {
@@ -57,6 +60,7 @@ export interface CommunityGroup {
   country: string
   flag: string
   joined?: boolean
+  pending?: boolean
 }
 
 export interface WhatsAppActive {
@@ -78,7 +82,25 @@ export interface User {
   coins?: number
   rating?: number
   sold?: number
+  profilePicture?: string
+  isAdmin?: boolean
 }
+
+// UAE Locations
+export const uaeLocations = [
+  'Dubai Marina', 'Deira', 'Bur Dubai', 'JBR', 'Downtown Dubai', 'Business Bay',
+  'Al Barsha', 'Jumeirah', 'Al Quoz', 'Dubai Silicon Oasis', 'International City',
+  'Al Nahda', 'Karama', 'Satwa', 'Dubai Investment Park', 'DIFC', 'Palm Jumeirah',
+  'Sharjah', 'Al Majaz', 'Al Nahda Sharjah', 'Industrial Area Sharjah',
+  'Abu Dhabi City', 'Al Reem Island', 'Khalifa City', 'Mussafah', 'Al Ain',
+  'Ajman', 'Al Nuaimiya', 'Ajman Industrial',
+  'Ras Al Khaimah', 'RAK City', 'Al Nakheel RAK',
+  'Fujairah', 'Fujairah City', 'Dibba',
+  'Umm Al Quwain'
+]
+
+// Admin email
+export const ADMIN_EMAIL = 'dubaikismag@gmail.com'
 
 interface AppState {
   user: User | null
@@ -89,21 +111,33 @@ interface AppState {
   communityGroups: CommunityGroup[]
   whatsappActive: WhatsAppActive[]
   savedAds: string[]
+  likedAds: string[]
   currentTab: string
   showAuthModal: boolean
   coins: number
   dailyCheckedIn: boolean
+  selectedLocation: string
+  searchQuery: string
+  pendingCommunities: CommunityGroup[]
   
   setUser: (user: User | null) => void
   setAuthenticated: (val: boolean) => void
   addListing: (listing: Listing) => void
+  deleteListing: (id: string) => void
   toggleSavedAd: (id: string) => void
+  toggleLikedAd: (id: string) => void
+  shareListing: (id: string) => void
   setCurrentTab: (tab: string) => void
   setShowAuthModal: (show: boolean) => void
   addCoins: (amount: number) => void
   joinGroup: (groupId: string) => void
   claimDaily: () => void
-  getSortedListings: (category?: string) => Listing[]
+  setSelectedLocation: (location: string) => void
+  setSearchQuery: (query: string) => void
+  requestCommunity: (group: Omit<CommunityGroup, 'id' | 'pending'>) => void
+  approveCommunity: (id: string) => void
+  getFilteredListings: (category?: string, sort?: string, searchQuery?: string, location?: string) => Listing[]
+  isAdmin: () => boolean
 }
 
 const sampleListings: Listing[] = [
@@ -125,7 +159,10 @@ const sampleListings: Listing[] = [
     specs: { Year: '2020', KM: '45,000', Color: 'White', Doors: '4', Seats: '5', Engine: '2.5L' },
     isFeatured: true,
     featuredDays: 7,
-    views: 234
+    views: 234,
+    likes: 45,
+    shares: 12,
+    tags: ['Verified', 'Inspected', 'Warranty']
   },
   {
     id: '2',
@@ -134,7 +171,7 @@ const sampleListings: Listing[] = [
     priceType: 'monthly',
     category: 'Property',
     subcategory: 'Apartments',
-    location: 'Deira, Dubai',
+    location: 'Deira',
     emoji: '🏠',
     badge: 'NEW',
     verified: true,
@@ -146,7 +183,10 @@ const sampleListings: Listing[] = [
     specs: { Bedrooms: '1', Bathrooms: '1', Size: '650 sqft', Furnished: 'Yes' },
     isFeatured: true,
     featuredDays: 14,
-    views: 156
+    views: 156,
+    likes: 32,
+    shares: 8,
+    tags: ['Verified', 'Metro Nearby']
   },
   {
     id: '3',
@@ -163,7 +203,10 @@ const sampleListings: Listing[] = [
     description: 'iPhone 14 Pro 256GB Deep Purple. 6 months old, with warranty.',
     images: [],
     specs: { Storage: '256GB', Color: 'Deep Purple', Warranty: '6 months' },
-    views: 89
+    views: 89,
+    likes: 22,
+    shares: 5,
+    tags: ['Verified', 'With Warranty']
   },
   {
     id: '4',
@@ -172,7 +215,7 @@ const sampleListings: Listing[] = [
     priceType: 'monthly',
     category: 'Jobs',
     subcategory: 'Driver',
-    location: 'Dubai',
+    location: 'Downtown Dubai',
     emoji: '💼',
     badge: 'HIRE',
     phone: '+971504567890',
@@ -180,7 +223,10 @@ const sampleListings: Listing[] = [
     description: 'Looking for experienced driver with UAE license. Family driver position.',
     images: [],
     specs: { Type: 'Full-time', License: 'Required', Experience: '3+ years' },
-    views: 67
+    views: 67,
+    likes: 15,
+    shares: 3,
+    tags: ['Urgent', 'Full-time']
   },
   {
     id: '5',
@@ -195,7 +241,10 @@ const sampleListings: Listing[] = [
     description: 'Honda CBR 150 in excellent condition. Low mileage.',
     images: [],
     specs: { Year: '2022', KM: '8,000', Color: 'Red/Black' },
-    views: 45
+    views: 45,
+    likes: 18,
+    shares: 2,
+    tags: ['Low KM']
   },
   {
     id: '6',
@@ -211,7 +260,10 @@ const sampleListings: Listing[] = [
     description: 'Fertile farmland with water supply. Suitable for vegetables.',
     images: [],
     specs: { Size: '2 acres', Water: 'Available', Soil: 'Fertile' },
-    views: 112
+    views: 112,
+    likes: 25,
+    shares: 7,
+    tags: ['Water Available', 'Ready to Farm']
   },
   {
     id: '7',
@@ -219,7 +271,7 @@ const sampleListings: Listing[] = [
     price: 120,
     priceType: 'kg',
     category: 'Farmland',
-    location: 'RAK',
+    location: 'Ras Al Khaimah',
     emoji: '🥦',
     badge: 'FRESH',
     phone: '+971507890123',
@@ -227,7 +279,10 @@ const sampleListings: Listing[] = [
     description: 'Fresh organic dates directly from farm. Premium quality.',
     images: [],
     specs: { Type: 'Medjool', Origin: 'RAK', Organic: 'Yes' },
-    views: 78
+    views: 78,
+    likes: 35,
+    shares: 10,
+    tags: ['Organic', 'Fresh', 'Direct from Farm']
   },
   {
     id: '8',
@@ -242,7 +297,52 @@ const sampleListings: Listing[] = [
     description: 'Mini tractor in good working condition. Ideal for small farms.',
     images: [],
     specs: { Brand: 'Kubota', Hours: '500', Condition: 'Good' },
-    views: 34
+    views: 34,
+    likes: 8,
+    shares: 2,
+    tags: ['Working Condition']
+  },
+  {
+    id: '9',
+    title: 'Studio in JBR',
+    price: 5500,
+    priceType: 'monthly',
+    category: 'Property',
+    subcategory: 'Apartments',
+    location: 'JBR',
+    emoji: '🏠',
+    badge: 'NEW',
+    verified: true,
+    timeAgo: '3h',
+    phone: '+971509012345',
+    whatsapp: '+971509012345',
+    description: 'Beautiful studio apartment in JBR with sea view.',
+    images: [],
+    specs: { Bedrooms: 'Studio', Bathrooms: '1', Size: '450 sqft', View: 'Sea View' },
+    views: 198,
+    likes: 55,
+    shares: 15,
+    tags: ['Verified', 'Sea View', 'Furnished']
+  },
+  {
+    id: '10',
+    title: 'Samsung 65" QLED TV',
+    price: 2800,
+    category: 'Electronics',
+    subcategory: 'TVs',
+    location: 'Abu Dhabi',
+    emoji: '📺',
+    badge: 'SALE',
+    verified: true,
+    phone: '+971509123456',
+    whatsapp: '+971509123456',
+    description: 'Samsung 65 inch QLED 4K Smart TV. 1 year old with warranty.',
+    images: [],
+    specs: { Size: '65 inch', Type: 'QLED', Resolution: '4K', Smart: 'Yes' },
+    views: 67,
+    likes: 12,
+    shares: 4,
+    tags: ['Verified', 'Under Warranty']
   }
 ]
 
@@ -316,7 +416,26 @@ const sampleCommunityGroups: CommunityGroup[] = [
   { id: 'g2', name: 'Kerala Community UAE', members: 2100, activity: 'Jobs & support', country: 'India', flag: '🇮🇳' },
   { id: 'g3', name: 'Tamil Nadu in Abu Dhabi', members: 980, activity: 'Tamil culture', country: 'India', flag: '🇮🇳' },
   { id: 'g4', name: 'Pakistani Community UAE', members: 2150, activity: 'Very active', country: 'Pakistan', flag: '🇵🇰' },
-  { id: 'g5', name: 'Lahore Expats Dubai', members: 670, activity: 'City connections', country: 'Pakistan', flag: '🇵🇰' }
+  { id: 'g5', name: 'Lahore Expats Dubai', members: 670, activity: 'City connections', country: 'Pakistan', flag: '🇵🇰' },
+  { id: 'g6', name: 'Filipinos in UAE', members: 4500, activity: 'Very active', country: 'Philippines', flag: '🇵🇭' },
+  { id: 'g7', name: 'Bangladesh Community', members: 1800, activity: 'Jobs & support', country: 'Bangladesh', flag: '🇧🇩' },
+  { id: 'g8', name: 'Sri Lankans Dubai', members: 1200, activity: 'Active weekly', country: 'Sri Lanka', flag: '🇱🇰' },
+  { id: 'g9', name: 'Nepali Community UAE', members: 950, activity: 'Growing fast', country: 'Nepal', flag: '🇳🇵' },
+  { id: 'g10', name: 'Egyptians in Dubai', members: 2300, activity: 'Very active', country: 'Egypt', flag: '🇪🇬' },
+  { id: 'g11', name: 'Lebanese in UAE', members: 1100, activity: 'Business network', country: 'Lebanon', flag: '🇱🇧' },
+  { id: 'g12', name: 'Jordanians Dubai', members: 800, activity: 'Active daily', country: 'Jordan', flag: '🇯🇴' },
+  { id: 'g13', name: 'Syrians in UAE', members: 650, activity: 'Support group', country: 'Syria', flag: '🇸🇾' },
+  { id: 'g14', name: 'British Expats Dubai', members: 1500, activity: 'Social events', country: 'UK', flag: '🇬🇧' },
+  { id: 'g15', name: 'Americans in UAE', members: 1200, activity: 'Networking', country: 'USA', flag: '🇺🇸' },
+  { id: 'g16', name: 'French Community Dubai', members: 700, activity: 'Cultural events', country: 'France', flag: '🇫🇷' },
+  { id: 'g17', name: 'Germans in UAE', members: 550, activity: 'Business focus', country: 'Germany', flag: '🇩🇪' },
+  { id: 'g18', name: 'Russians in Dubai', members: 1800, activity: 'Very active', country: 'Russia', flag: '🇷🇺' },
+  { id: 'g19', name: 'Chinese Community UAE', members: 2200, activity: 'Business & social', country: 'China', flag: '🇨🇳' },
+  { id: 'g20', name: 'Iranians in Dubai', members: 3100, activity: 'Active daily', country: 'Iran', flag: '🇮🇷' },
+  { id: 'g21', name: 'Emiratis Connect', members: 5000, activity: 'Local community', country: 'UAE', flag: '🇦🇪' },
+  { id: 'g22', name: 'Africans in UAE', members: 1600, activity: 'Growing community', country: 'Africa', flag: '🌍' },
+  { id: 'g23', name: 'Indonesians Dubai', members: 900, activity: 'Active weekly', country: 'Indonesia', flag: '🇮🇩' },
+  { id: 'g24', name: 'Malaysians in UAE', members: 450, activity: 'Social group', country: 'Malaysia', flag: '🇲🇾' }
 ]
 
 const sampleWhatsAppActive: WhatsAppActive[] = [
@@ -336,18 +455,36 @@ export const useAppStore = create<AppState>()(
       communityGroups: sampleCommunityGroups,
       whatsappActive: sampleWhatsAppActive,
       savedAds: [],
+      likedAds: [],
       currentTab: 'Home',
       showAuthModal: false,
       coins: 45,
       dailyCheckedIn: false,
+      selectedLocation: 'Dubai, UAE',
+      searchQuery: '',
+      pendingCommunities: [],
       
       setUser: (user) => set({ user, isAuthenticated: !!user }),
       setAuthenticated: (val) => set({ isAuthenticated: val }),
       addListing: (listing) => set((state) => ({ listings: [listing, ...state.listings] })),
+      deleteListing: (id) => set((state) => ({ listings: state.listings.filter(l => l.id !== id) })),
       toggleSavedAd: (id) => set((state) => ({
         savedAds: state.savedAds.includes(id) 
           ? state.savedAds.filter(savedId => savedId !== id)
           : [...state.savedAds, id]
+      })),
+      toggleLikedAd: (id) => set((state) => ({
+        likedAds: state.likedAds.includes(id) 
+          ? state.likedAds.filter(likedId => likedId !== id)
+          : [...state.likedAds, id],
+        listings: state.listings.map(l => 
+          l.id === id ? { ...l, likes: (l.likes || 0) + (state.likedAds.includes(id) ? -1 : 1) } : l
+        )
+      })),
+      shareListing: (id) => set((state) => ({
+        listings: state.listings.map(l => 
+          l.id === id ? { ...l, shares: (l.shares || 0) + 1 } : l
+        )
       })),
       setCurrentTab: (tab) => set({ currentTab: tab }),
       setShowAuthModal: (show) => set({ showAuthModal: show }),
@@ -358,14 +495,69 @@ export const useAppStore = create<AppState>()(
         )
       })),
       claimDaily: () => set((state) => ({ dailyCheckedIn: true, coins: state.coins + 5 })),
-      getSortedListings: (category) => {
-        return get().listings
-          .filter((l) => !category || l.category === category)
-          .sort((a, b) => {
-            if (a.isFeatured && !b.isFeatured) return -1
-            if (!a.isFeatured && b.isFeatured) return 1
-            return (b.featuredDays || 0) - (a.featuredDays || 0)
-          })
+      setSelectedLocation: (location) => set({ selectedLocation: location }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
+      requestCommunity: (group) => set((state) => ({
+        pendingCommunities: [...state.pendingCommunities, { ...group, id: `pending-${Date.now()}`, pending: true }]
+      })),
+      approveCommunity: (id) => set((state) => {
+        const pending = state.pendingCommunities.find(g => g.id === id)
+        if (!pending) return state
+        return {
+          pendingCommunities: state.pendingCommunities.filter(g => g.id !== id),
+          communityGroups: [...state.communityGroups, { ...pending, id: `g${state.communityGroups.length + 1}`, pending: false }]
+        }
+      }),
+      getFilteredListings: (category, sort, searchQuery, location) => {
+        let filtered = get().listings
+        
+        // Filter by category
+        if (category && category !== 'All') {
+          filtered = filtered.filter(l => l.category === category)
+        }
+        
+        // Filter by search query
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase()
+          filtered = filtered.filter(l => 
+            l.title.toLowerCase().includes(query) ||
+            l.description.toLowerCase().includes(query) ||
+            l.category.toLowerCase().includes(query) ||
+            l.location.toLowerCase().includes(query)
+          )
+        }
+        
+        // Filter by location (nearby)
+        if (location && location !== 'Dubai, UAE' && location !== 'All UAE') {
+          filtered = filtered.filter(l => 
+            l.location.toLowerCase().includes(location.toLowerCase().replace(', uae', '').replace('dubai, ', ''))
+          )
+        }
+        
+        // Sort
+        switch (sort) {
+          case 'Price':
+            filtered = [...filtered].sort((a, b) => a.price - b.price)
+            break
+          case 'Verified':
+            filtered = [...filtered].sort((a, b) => (b.verified ? 1 : 0) - (a.verified ? 1 : 0))
+            break
+          case 'Near me':
+            // For now, just filter by selected location
+            break
+          default: // Newest
+            filtered = [...filtered].sort((a, b) => {
+              if (a.isFeatured && !b.isFeatured) return -1
+              if (!a.isFeatured && b.isFeatured) return 1
+              return (b.featuredDays || 0) - (a.featuredDays || 0)
+            })
+        }
+        
+        return filtered
+      },
+      isAdmin: () => {
+        const user = get().user
+        return user?.email === ADMIN_EMAIL || user?.isAdmin === true
       }
     }),
     { name: 'dubaikismag-storage' }
@@ -383,6 +575,18 @@ export const categories = [
   { id: 'more', name: 'More...', emoji: '📦', subcategories: ['Fashion', 'Sports', 'Books', 'Toys', 'Art', 'Other'] }
 ]
 
+// Category-specific specifications
+export const categorySpecs: Record<string, string[]> = {
+  'Vehicles': ['Year', 'KM', 'Color', 'Doors', 'Seats', 'Engine', 'Transmission', 'Fuel Type', 'Body Type'],
+  'Property': ['Bedrooms', 'Bathrooms', 'Size', 'Furnished', 'Parking', 'View', 'Floor', 'Building Age'],
+  'Jobs': ['Type', 'Experience Required', 'Salary Range', 'Working Hours', 'Benefits', 'Visa Provided'],
+  'Labour': ['Experience', 'Skills', 'Availability', 'Languages', 'Certifications'],
+  'Electronics': ['Brand', 'Model', 'Storage', 'Color', 'Warranty', 'Condition', 'Accessories'],
+  'Furniture': ['Material', 'Color', 'Dimensions', 'Condition', 'Assembly Required', 'Brand'],
+  'Farmland': ['Size', 'Water Supply', 'Soil Type', 'Fencing', 'Electricity', 'Road Access'],
+  'More': ['Condition', 'Brand', 'Size', 'Color', 'Material']
+}
+
 export const topTabs = [
   { id: 'home', name: 'Home', emoji: '🏠' },
   { id: 'jobs', name: 'Jobs', emoji: '💼' },
@@ -393,4 +597,22 @@ export const topTabs = [
   { id: 'groups', name: 'Groups', emoji: '🌍' },
   { id: 'fun', name: 'Fun', emoji: '🎮' },
   { id: 'post', name: '+ Post', emoji: '' }
+]
+
+// Country filters for communities
+export const countryFilters = [
+  { id: 'all', name: 'All UAE', flag: '🇦🇪' },
+  { id: 'india', name: 'India', flag: '🇮🇳' },
+  { id: 'pakistan', name: 'Pakistan', flag: '🇵🇰' },
+  { id: 'philippines', name: 'Philippines', flag: '🇵🇭' },
+  { id: 'bangladesh', name: 'Bangladesh', flag: '🇧🇩' },
+  { id: 'egypt', name: 'Egypt', flag: '🇪🇬' },
+  { id: 'nepal', name: 'Nepal', flag: '🇳🇵' },
+  { id: 'srilanka', name: 'Sri Lanka', flag: '🇱🇰' },
+  { id: 'lebanon', name: 'Lebanon', flag: '🇱🇧' },
+  { id: 'uk', name: 'UK', flag: '🇬🇧' },
+  { id: 'usa', name: 'USA', flag: '🇺🇸' },
+  { id: 'russia', name: 'Russia', flag: '🇷🇺' },
+  { id: 'china', name: 'China', flag: '🇨🇳' },
+  { id: 'iran', name: 'Iran', flag: '🇮🇷' }
 ]

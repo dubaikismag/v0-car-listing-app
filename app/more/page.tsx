@@ -1,18 +1,54 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
-import { useAppStore } from '@/lib/store'
-import { ChevronRight, X } from 'lucide-react'
+import { useAppStore, ADMIN_EMAIL } from '@/lib/store'
+import { ChevronRight, X, Camera, ArrowLeft, Edit2 } from 'lucide-react'
 
 export default function MorePage() {
-  const { user, isAuthenticated, coins, setShowAuthModal } = useAppStore()
+  const { user, isAuthenticated, coins, setShowAuthModal, setUser, isAdmin } = useAppStore()
   const [showVIP, setShowVIP] = useState(false)
+  const [showEditProfile, setShowEditProfile] = useState(false)
   const [selectedVIP, setSelectedVIP] = useState('pro')
+  const [profilePicture, setProfilePicture] = useState<string | null>(user?.profilePicture || null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Edit profile state
+  const [editName, setEditName] = useState(user?.name || 'Guest User')
+  const [editPhone, setEditPhone] = useState(user?.phone || '')
+  const [editLocation, setEditLocation] = useState(user?.location || 'Dubai, UAE')
+
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const result = reader.result as string
+        setProfilePicture(result)
+        if (user) {
+          setUser({ ...user, profilePicture: result })
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSaveProfile = () => {
+    if (user) {
+      setUser({
+        ...user,
+        name: editName,
+        phone: editPhone,
+        location: editLocation,
+        profilePicture: profilePicture || undefined
+      })
+    }
+    setShowEditProfile(false)
+  }
 
   const menuItems = [
     { emoji: '📋', label: 'My Listings', href: '/my-listings' },
@@ -21,7 +57,7 @@ export default function MorePage() {
     { emoji: '🪙', label: 'Coins & Rewards', href: '/rewards' },
     { emoji: '🎮', label: 'Fun Zone', href: '/fun' },
     { emoji: '🌍', label: 'My Communities', href: '/communities' },
-    { emoji: '⚙️', label: 'Admin Panel', badge: 'ADMIN', href: '/admin' },
+    ...(isAdmin() ? [{ emoji: '⚙️', label: 'Admin Panel', badge: 'ADMIN', href: '/admin' }] : []),
     { emoji: '🌐', label: 'Language / لغة', href: '/language' },
     { emoji: '🚪', label: 'Log Out', href: '#', isLogout: true },
   ]
@@ -48,25 +84,51 @@ export default function MorePage() {
 
       <main>
         {/* Profile Header */}
-        <div className="gradient-purple px-4 py-8 text-center">
-          <div className="w-24 h-24 mx-auto rounded-full bg-purple-400/50 flex items-center justify-center mb-4 border-4 border-purple-300/50">
-            <span className="text-5xl text-purple-200">👤</span>
+        <div className="gradient-purple px-4 py-8 text-center relative">
+          {/* Edit Profile Button */}
+          <button
+            onClick={() => setShowEditProfile(true)}
+            className="absolute top-4 right-4 p-2 bg-white/20 rounded-full"
+          >
+            <Edit2 className="w-5 h-5 text-white" />
+          </button>
+
+          <div 
+            className="w-24 h-24 mx-auto rounded-full bg-purple-400/50 flex items-center justify-center mb-4 border-4 border-purple-300/50 relative overflow-hidden cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {profilePicture ? (
+              <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-5xl text-purple-200">👤</span>
+            )}
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <Camera className="w-6 h-6 text-white" />
+            </div>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleProfilePictureChange}
+            className="hidden"
+          />
+
           <h2 className="text-2xl font-bold text-white mb-1">
-            {isAuthenticated && user ? user.name : 'Mohammed Al Rashid'}
+            {isAuthenticated && user ? user.name : 'Guest User'}
           </h2>
           <p className="text-purple-200 flex items-center justify-center gap-2 mb-3">
-            <span>📍</span> Dubai, UAE - Member since 2024
+            <span>📍</span> {user?.location || 'Dubai, UAE'} - Member since {user?.memberSince || '2024'}
           </p>
           <span className="inline-flex items-center gap-1 px-4 py-1.5 bg-green-500/20 text-green-300 rounded-full text-sm font-medium">
-            <span>✓</span> Verified User
+            <span>✓</span> {user?.verified ? 'Verified User' : 'Regular User'}
           </span>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-2 px-4 py-4 bg-purple-700 text-center">
           <div>
-            <p className="text-2xl font-bold text-purple-200">12</p>
+            <p className="text-2xl font-bold text-purple-200">{user?.activeAds || 0}</p>
             <p className="text-xs text-purple-300">Active Ads</p>
           </div>
           <div className="flex flex-col items-center">
@@ -77,12 +139,12 @@ export default function MorePage() {
           </div>
           <div>
             <p className="text-2xl font-bold text-amber-400 flex items-center justify-center gap-0.5">
-              4.9 <span className="text-lg">⭐</span>
+              {user?.rating || 0} <span className="text-lg">⭐</span>
             </p>
             <p className="text-xs text-purple-300">Rating</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-purple-200">86</p>
+            <p className="text-2xl font-bold text-purple-200">{user?.sold || 0}</p>
             <p className="text-xs text-purple-300">Sold</p>
           </div>
         </div>
@@ -96,7 +158,7 @@ export default function MorePage() {
               onClick={(e) => {
                 if (item.isLogout) {
                   e.preventDefault()
-                  // Handle logout
+                  setUser(null)
                 }
               }}
               className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100"
@@ -135,13 +197,97 @@ export default function MorePage() {
         </div>
       </main>
 
+      {/* Edit Profile Modal */}
+      {showEditProfile && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto">
+            {/* Header with back button */}
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+              <button onClick={() => setShowEditProfile(false)} className="p-2">
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <h2 className="text-lg font-bold text-gray-900">Edit Profile</h2>
+              <button onClick={() => setShowEditProfile(false)} className="p-2">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="px-5 pb-8 pt-4">
+              {/* Profile Picture */}
+              <div className="flex justify-center mb-6">
+                <div 
+                  className="w-24 h-24 rounded-full bg-purple-100 flex items-center justify-center border-4 border-purple-200 relative overflow-hidden cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {profilePicture ? (
+                    <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-5xl">👤</span>
+                  )}
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Fields */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-400"
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-400"
+                    placeholder="+971 50 123 4567"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={editLocation}
+                    onChange={(e) => setEditLocation(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-400"
+                    placeholder="Dubai, UAE"
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={handleSaveProfile}
+                className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl mt-6"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* VIP Modal */}
       {showVIP && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
           <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto">
-            <div className="flex justify-center pt-3 pb-2">
+            {/* Close button */}
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="w-8" />
               <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+              <button onClick={() => setShowVIP(false)} className="p-2">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
             </div>
+            
             <div className="px-5 pb-8">
               <div className="text-center mb-6">
                 <span className="text-5xl block mb-2">👑</span>

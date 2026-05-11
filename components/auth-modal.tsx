@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { X, Phone, Mail, ArrowLeft } from 'lucide-react'
-import { useAppStore } from '@/lib/store'
+import { useAppStore, ADMIN_EMAIL } from '@/lib/store'
 
 type Step = 'method' | 'input' | 'otp' | 'name'
 
@@ -38,18 +38,23 @@ export function AuthModal() {
 
   const handleComplete = () => {
     if (!name.trim()) return
+    
+    // Check if user is admin
+    const isAdminUser = method === 'email' && inputValue.toLowerCase() === ADMIN_EMAIL
+    
     setUser({
-      id: '1',
+      id: Date.now().toString(),
       name: name.trim(),
       phone: method === 'phone' ? inputValue : undefined,
       email: method === 'email' ? inputValue : undefined,
       location: 'Dubai, UAE',
-      memberSince: '2024',
-      verified: true,
-      activeAds: 12,
+      memberSince: new Date().getFullYear().toString(),
+      verified: isAdminUser,
+      activeAds: 0,
       coins: 45,
-      rating: 4.9,
-      sold: 86
+      rating: 0,
+      sold: 0,
+      isAdmin: isAdminUser
     })
     setAuthenticated(true)
     setShowAuthModal(false)
@@ -183,6 +188,7 @@ export function AuthModal() {
               >
                 {isLoading ? 'Verifying...' : 'Verify OTP'}
               </button>
+              <p className="text-center text-gray-400 text-sm">Demo: Use any 6 digits</p>
             </div>
           )}
 
@@ -211,6 +217,9 @@ export function AuthModal() {
               >
                 Complete Sign Up
               </button>
+              {method === 'email' && inputValue.toLowerCase() === ADMIN_EMAIL && (
+                <p className="text-center text-amber-600 text-sm">Admin account detected</p>
+              )}
             </div>
           )}
         </div>

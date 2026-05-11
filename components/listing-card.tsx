@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { type Listing, useAppStore } from '@/lib/store'
-import { Heart, MapPin, Check, MessageCircle, Phone } from 'lucide-react'
+import { Heart, MapPin, Check, MessageCircle, Phone, Share2, X, ArrowLeft } from 'lucide-react'
 
 interface ListingCardProps {
   listing: Listing
@@ -11,8 +11,9 @@ interface ListingCardProps {
 }
 
 export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
-  const { savedAds, toggleSavedAd } = useAppStore()
+  const { savedAds, toggleSavedAd, likedAds, toggleLikedAd, shareListing } = useAppStore()
   const isSaved = savedAds.includes(listing.id)
+  const isLiked = likedAds.includes(listing.id)
 
   const formatPrice = (price: number, priceType?: string) => {
     const formatted = price.toLocaleString()
@@ -22,21 +23,66 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
     return `AED ${formatted}`
   }
 
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const message = encodeURIComponent(`Hi, I'm interested in: ${listing.title} - ${formatPrice(listing.price, listing.priceType)}`)
+    window.open(`https://wa.me/${listing.whatsapp.replace(/[^0-9]/g, '')}?text=${message}`, '_blank')
+  }
+
+  const handleCall = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    window.location.href = `tel:${listing.phone}`
+  }
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    shareListing(listing.id)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: listing.title,
+          text: `Check out: ${listing.title} - ${formatPrice(listing.price, listing.priceType)}`,
+          url: window.location.origin + `/listing/${listing.id}`
+        })
+      } catch {
+        // User cancelled or error
+      }
+    } else {
+      // Fallback - copy to clipboard
+      navigator.clipboard.writeText(window.location.origin + `/listing/${listing.id}`)
+    }
+  }
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleLikedAd(listing.id)
+  }
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleSavedAd(listing.id)
+  }
+
   const badgeColors: Record<string, string> = {
-    HOT: 'bg-orange-500 text-white',
-    NEW: 'bg-blue-500 text-white',
-    SALE: 'bg-red-500 text-white',
-    HIRE: 'bg-amber-100 text-amber-800',
+    HOT: 'bg-amber-500 text-white',
+    NEW: 'bg-purple-600 text-white',
+    SALE: 'bg-green-500 text-white',
+    HIRE: 'bg-orange-500 text-white',
     FARM: 'bg-green-500 text-white',
-    FRESH: 'bg-emerald-500 text-white',
-    TOOLS: 'bg-gray-500 text-white'
+    FRESH: 'bg-teal-500 text-white',
+    TOOLS: 'bg-indigo-500 text-white'
   }
 
   const bgColors: Record<string, string> = {
-    HOT: 'bg-white',
-    NEW: 'bg-blue-50',
+    HOT: 'bg-amber-50',
+    NEW: 'bg-purple-50',
     SALE: 'bg-white',
-    HIRE: 'bg-amber-50',
+    HIRE: 'bg-orange-50',
     FARM: 'bg-green-50',
     FRESH: 'bg-green-50',
     TOOLS: 'bg-gray-50'
@@ -45,35 +91,36 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
   if (variant === 'horizontal') {
     return (
       <Link href={`/listing/${listing.id}`} className="block">
-        <div className={`rounded-xl overflow-hidden border border-gray-100 ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
+        <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
           {/* Image Section */}
-          <div className="relative h-32 flex items-center justify-center">
+          <div className="relative h-28 flex items-center justify-center">
             {listing.badge && (
               <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-bold ${badgeColors[listing.badge]}`}>
                 {listing.badge}
               </span>
             )}
-            {listing.isFeatured && (
-              <span className="absolute top-2 right-2 bg-purple-100 p-1 rounded">
-                <svg className="w-4 h-4 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                </svg>
-              </span>
-            )}
-            <span className="text-5xl">{listing.emoji}</span>
+            <button
+              onClick={handleSave}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm"
+            >
+              <svg className={`w-4 h-4 ${isSaved ? 'text-purple-600 fill-purple-600' : 'text-gray-400'}`} viewBox="0 0 20 20" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
+                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+              </svg>
+            </button>
+            <span className="text-4xl">{listing.emoji}</span>
           </div>
           
           {/* Content */}
-          <div className="p-3">
-            <p className="text-purple-600 font-bold text-lg">{formatPrice(listing.price, listing.priceType)}</p>
+          <div className="p-2.5">
+            <p className="text-purple-600 font-bold">{formatPrice(listing.price, listing.priceType)}</p>
             <p className="text-gray-900 font-medium text-sm truncate">{listing.title}</p>
-            <div className="flex items-center gap-1 mt-1">
+            <div className="flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3 text-red-500" />
-              <span className="text-gray-500 text-xs">{listing.location}</span>
+              <span className="text-gray-500 text-xs truncate">{listing.location}</span>
             </div>
-            <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center justify-between mt-1.5">
               {listing.verified && (
-                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                <span className="flex items-center gap-0.5 text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
                   <Check className="w-3 h-3" />
                   Verified
                 </span>
@@ -90,7 +137,7 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
 
   return (
     <Link href={`/listing/${listing.id}`} className="block">
-      <div className={`rounded-xl overflow-hidden border border-gray-100 ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
+      <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'}`}>
         {/* Image Section */}
         <div className="relative aspect-square flex items-center justify-center">
           {listing.badge && (
@@ -99,15 +146,14 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
             </span>
           )}
           <button
-            onClick={(e) => {
-              e.preventDefault()
-              toggleSavedAd(listing.id)
-            }}
-            className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white shadow-sm"
+            onClick={handleSave}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 shadow-sm"
           >
-            <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+            <svg className={`w-4 h-4 ${isSaved ? 'text-purple-600 fill-purple-600' : 'text-gray-400'}`} viewBox="0 0 20 20" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5">
+              <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+            </svg>
           </button>
-          <span className="text-6xl">{listing.emoji}</span>
+          <span className="text-5xl">{listing.emoji}</span>
         </div>
         
         {/* Content */}
@@ -118,12 +164,48 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
             <MapPin className="w-3 h-3 text-red-500" />
             <span className="text-gray-500 text-xs">{listing.location}</span>
           </div>
-          {listing.verified && (
-            <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded mt-2">
-              <Check className="w-3 h-3" />
-              Verified
-            </span>
-          )}
+          
+          {/* Tags & Verified */}
+          <div className="flex flex-wrap items-center gap-1 mt-2">
+            {listing.verified && (
+              <span className="flex items-center gap-0.5 text-xs text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
+                <Check className="w-3 h-3" />
+                Verified
+              </span>
+            )}
+            {listing.tags?.slice(0, 2).map((tag) => (
+              <span key={tag} className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <button onClick={handleLike} className="flex items-center gap-1 text-xs text-gray-500">
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                <span>{listing.likes || 0}</span>
+              </button>
+              <button onClick={handleShare} className="flex items-center gap-1 text-xs text-gray-500">
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={handleWhatsApp}
+                className="p-1.5 bg-green-500 rounded-lg"
+              >
+                <MessageCircle className="w-4 h-4 text-white" />
+              </button>
+              <button 
+                onClick={handleCall}
+                className="p-1.5 bg-purple-600 rounded-lg"
+              >
+                <Phone className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </Link>
@@ -132,6 +214,10 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
 
 // Listing Detail Sheet/Modal Component
 export function ListingDetailSheet({ listing, onClose }: { listing: Listing; onClose: () => void }) {
+  const { savedAds, toggleSavedAd, likedAds, toggleLikedAd, shareListing } = useAppStore()
+  const isSaved = savedAds.includes(listing.id)
+  const isLiked = likedAds.includes(listing.id)
+
   const handleWhatsApp = () => {
     const message = encodeURIComponent(`Hi, I'm interested in: ${listing.title}`)
     window.open(`https://wa.me/${listing.whatsapp.replace(/[^0-9]/g, '')}?text=${message}`, '_blank')
@@ -141,15 +227,37 @@ export function ListingDetailSheet({ listing, onClose }: { listing: Listing; onC
     window.location.href = `tel:${listing.phone}`
   }
 
-  const { savedAds, toggleSavedAd } = useAppStore()
-  const isSaved = savedAds.includes(listing.id)
+  const handleShare = async () => {
+    shareListing(listing.id)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: listing.title,
+          text: `Check out: ${listing.title}`,
+          url: window.location.origin + `/listing/${listing.id}`
+        })
+      } catch {
+        // User cancelled
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.origin + `/listing/${listing.id}`)
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50" onClick={onClose}>
       <div 
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[80vh] overflow-y-auto animate-in slide-in-from-bottom duration-300"
+        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full z-10"
+        >
+          <X className="w-5 h-5 text-gray-600" />
+        </button>
+
         {/* Drag Handle */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-12 h-1 bg-gray-300 rounded-full" />
@@ -158,12 +266,12 @@ export function ListingDetailSheet({ listing, onClose }: { listing: Listing; onC
         <div className="px-4 pb-8">
           {/* Emoji Icon */}
           <div className="flex justify-center py-4">
-            <span className="text-6xl">{listing.emoji}</span>
+            <span className="text-7xl">{listing.emoji}</span>
           </div>
 
           {/* Price */}
           <p className="text-center text-purple-600 font-bold text-2xl">
-            AED {listing.price.toLocaleString()}{listing.priceType === 'monthly' ? '/mo' : ''}
+            AED {listing.price.toLocaleString()}{listing.priceType === 'monthly' ? '/mo' : listing.priceType === 'yearly' ? '/yr' : listing.priceType === 'kg' ? '/kg' : ''}
           </p>
           
           {/* Title */}
@@ -175,26 +283,59 @@ export function ListingDetailSheet({ listing, onClose }: { listing: Listing; onC
             <span className="text-gray-500">{listing.location}</span>
           </div>
 
+          {/* Tags */}
+          {listing.tags && listing.tags.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2 mt-3">
+              {listing.verified && (
+                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                  <Check className="w-3 h-3" />
+                  Verified
+                </span>
+              )}
+              {listing.tags.map((tag) => (
+                <span key={tag} className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Description */}
           <div className="mt-4 p-4 bg-gray-50 rounded-xl">
             <h3 className="text-xs font-bold text-gray-500 uppercase mb-2">Description</h3>
-            <p className="text-gray-700 text-sm">{listing.description}</p>
+            <p className="text-gray-700 text-sm leading-relaxed">{listing.description}</p>
           </div>
 
           {/* Specifications */}
           {listing.specs && Object.keys(listing.specs).length > 0 && (
             <div className="mt-4 p-4 bg-gray-50 rounded-xl">
               <h3 className="text-xs font-bold text-gray-500 uppercase mb-2">Specifications</h3>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {Object.entries(listing.specs).map(([key, value]) => (
-                  <div key={key} className="flex justify-between text-sm">
-                    <span className="text-gray-500">{key}</span>
-                    <span className="text-gray-900 font-medium">{value}</span>
+                  <div key={key} className="flex flex-col">
+                    <span className="text-gray-400 text-xs">{key}</span>
+                    <span className="text-gray-900 font-medium text-sm">{value}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Stats */}
+          <div className="flex items-center justify-center gap-6 mt-4 py-3 border-y border-gray-100">
+            <div className="flex items-center gap-1 text-gray-500">
+              <span className="text-lg">👁️</span>
+              <span className="text-sm">{listing.views || 0} views</span>
+            </div>
+            <div className="flex items-center gap-1 text-gray-500">
+              <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+              <span className="text-sm">{listing.likes || 0} likes</span>
+            </div>
+            <div className="flex items-center gap-1 text-gray-500">
+              <Share2 className="w-5 h-5" />
+              <span className="text-sm">{listing.shares || 0} shares</span>
+            </div>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-3 mt-6">
@@ -214,14 +355,30 @@ export function ListingDetailSheet({ listing, onClose }: { listing: Listing; onC
             </button>
           </div>
 
-          {/* Save Button */}
-          <button
-            onClick={() => toggleSavedAd(listing.id)}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl mt-3 text-gray-600"
-          >
-            <span>{isSaved ? '💕' : '📌'}</span>
-            {isSaved ? 'Saved' : 'Save'}
-          </button>
+          {/* Secondary Actions */}
+          <div className="flex gap-3 mt-3">
+            <button
+              onClick={() => toggleLikedAd(listing.id)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 border rounded-xl ${isLiked ? 'border-red-200 bg-red-50 text-red-600' : 'border-gray-200 text-gray-600'}`}
+            >
+              <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500' : ''}`} />
+              {isLiked ? 'Liked' : 'Like'}
+            </button>
+            <button
+              onClick={() => toggleSavedAd(listing.id)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 border rounded-xl ${isSaved ? 'border-purple-200 bg-purple-50 text-purple-600' : 'border-gray-200 text-gray-600'}`}
+            >
+              <span>{isSaved ? '💕' : '📌'}</span>
+              {isSaved ? 'Saved' : 'Save'}
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex-1 flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl text-gray-600"
+            >
+              <Share2 className="w-5 h-5" />
+              Share
+            </button>
+          </div>
         </div>
       </div>
     </div>

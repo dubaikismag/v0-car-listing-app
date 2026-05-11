@@ -75,6 +75,7 @@
 /* Gradient backgrounds */
 .gradient-header {
   background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #8b5cf6 100%);
+  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.3);
 }
 
 .gradient-purple {
@@ -110,4 +111,46 @@
 }
 .badge-tools {
   background: #6366f1;
+}
+
+/* Safe area for iOS */
+.h-safe-area-inset-bottom {
+  height: env(safe-area-inset-bottom, 0px);
+}
+
+/* Gold shimmer effect for bell icon */
+@keyframes goldShimmer {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
+.gold-shimmer {
+  animation: goldShimmer 2s ease-in-out infinite;
+}
+
+/* Smooth animations */
+.animate-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card shadow */
+.card-shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Location bar separation */
+.location-bar {
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.1);
 }

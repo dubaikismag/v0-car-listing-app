@@ -1,48 +1,67 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
-import { useAppStore } from '@/lib/store'
+import { useAppStore, categorySpecs, uaeLocations } from '@/lib/store'
+import { ArrowLeft, X, Info } from 'lucide-react'
 
 const categories = [
-  { id: 'vehicles', name: 'Vehicles' },
-  { id: 'property', name: 'Property' },
-  { id: 'jobs', name: 'Jobs' },
-  { id: 'electronics', name: 'Electronics' },
-  { id: 'furniture', name: 'Furniture' },
-  { id: 'labour', name: 'Labour' },
-  { id: 'farmland', name: 'Farmland' },
-  { id: 'services', name: 'Services' },
+  { id: 'Vehicles', name: 'Vehicles', emoji: '🚗' },
+  { id: 'Property', name: 'Property', emoji: '🏠' },
+  { id: 'Jobs', name: 'Jobs', emoji: '💼' },
+  { id: 'Electronics', name: 'Electronics', emoji: '📱' },
+  { id: 'Furniture', name: 'Furniture', emoji: '🛋️' },
+  { id: 'Labour', name: 'Labour', emoji: '👷' },
+  { id: 'Farmland', name: 'Farmland', emoji: '🌾' },
+  { id: 'More', name: 'Services/Other', emoji: '📦' },
 ]
 
-const locations = ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'RAK', 'Fujairah', 'Al Ain']
+const priceTypes = [
+  { id: 'fixed', name: 'Fixed Price' },
+  { id: 'monthly', name: 'Per Month' },
+  { id: 'yearly', name: 'Per Year' },
+  { id: 'kg', name: 'Per KG' },
+]
+
+const MAX_IMAGES = 8
 
 export default function PostPage() {
+  const router = useRouter()
   const { isAuthenticated, setShowAuthModal, addListing } = useAppStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [formData, setFormData] = useState({
     category: '',
+    subcategory: '',
     title: '',
     price: '',
+    priceType: 'fixed',
     description: '',
-    location: 'Dubai',
+    location: 'Dubai Marina',
     phone: '',
     photos: [] as string[],
-    plan: 'free' as 'free' | 'featured' | 'urgent'
+    plan: 'free' as 'free' | 'featured' | 'urgent',
+    specs: {} as Record<string, string>
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  // Get category-specific specs
+  const currentSpecs = formData.category ? categorySpecs[formData.category] || [] : []
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
     
-    const newPhotos: string[] = []
-    Array.from(files).slice(0, 8 - formData.photos.length).forEach(file => {
+    const remainingSlots = MAX_IMAGES - formData.photos.length
+    if (remainingSlots <= 0) return
+    
+    Array.from(files).slice(0, remainingSlots).forEach(file => {
       const reader = new FileReader()
       reader.onload = (e) => {
         if (e.target?.result) {
@@ -56,10 +75,16 @@ export default function PostPage() {
             const ctx = canvas.getContext('2d')
             if (ctx) {
               ctx.drawImage(img, 0, 0)
+              // Add watermark
               ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
               ctx.font = `bold ${Math.max(20, img.width / 20)}px Arial`
               ctx.textAlign = 'center'
-              ctx.fillText('dubaikismag.com', img.width / 2, img.height - 30)
+              ctx.fillText('DubaiKismag.com', img.width / 2, img.height - 30)
+              // Add watermark stroke for better visibility
+              ctx.strokeStyle = 'rgba(128, 0, 128, 0.5)'
+              ctx.lineWidth = 2
+              ctx.strokeText('DubaiKismag.com', img.width / 2, img.height - 30)
+              
               setFormData(prev => ({
                 ...prev,
                 photos: [...prev.photos, canvas.toDataURL('image/jpeg', 0.8)]
@@ -105,46 +130,38 @@ export default function PostPage() {
       id: Date.now().toString(),
       title: formData.title,
       price: parseFloat(formData.price) || 0,
+      priceType: formData.priceType as 'fixed' | 'monthly' | 'yearly' | 'kg',
       category: formData.category,
+      subcategory: formData.subcategory,
       location: formData.location,
       emoji: getCategoryEmoji(formData.category),
       phone: formData.phone,
       whatsapp: formData.phone,
       description: formData.description,
       images: formData.photos,
+      specs: formData.specs,
       isFeatured: formData.plan !== 'free',
       featuredDays: formData.plan === 'featured' ? 7 : formData.plan === 'urgent' ? 14 : 0,
-      views: 0
+      views: 0,
+      likes: 0,
+      shares: 0,
+      tags: formData.plan === 'featured' ? ['Featured'] : formData.plan === 'urgent' ? ['Urgent', 'Featured'] : [],
+      timeAgo: 'Just now'
     }
     
     addListing(newListing)
-    alert('Ad posted successfully!')
+    setShowSuccess(true)
     
-    // Reset form
-    setFormData({
-      category: '',
-      title: '',
-      price: '',
-      description: '',
-      location: 'Dubai',
-      phone: '',
-      photos: [],
-      plan: 'free'
-    })
+    // Reset form after delay
+    setTimeout(() => {
+      setShowSuccess(false)
+      router.push('/')
+    }, 2000)
   }
 
   const getCategoryEmoji = (category: string) => {
-    const emojis: Record<string, string> = {
-      vehicles: '🚗',
-      property: '🏠',
-      jobs: '💼',
-      electronics: '📱',
-      furniture: '🛋️',
-      labour: '👷',
-      farmland: '🌾',
-      services: '🔧'
-    }
-    return emojis[category] || '📦'
+    const found = categories.find(c => c.id === category)
+    return found?.emoji || '📦'
   }
 
   const plans = [
@@ -155,16 +172,23 @@ export default function PostPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-24">
-      <Header />
-      <TopTabs />
+      <Header showSearch={false} />
+      
+      {/* Back button header */}
+      <div className="bg-white px-4 py-3 flex items-center gap-3 border-b border-gray-100 sticky top-0 z-40">
+        <button onClick={() => router.back()} className="p-2 -ml-2">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </button>
+        <h1 className="text-lg font-bold text-gray-900">Post Your Ad</h1>
+      </div>
 
       <main className="px-4 py-4">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        {/* Header Info */}
+        <div className="flex items-center gap-3 mb-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
           <span className="text-3xl">📝</span>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Post Your Ad</h1>
-            <p className="text-sm text-gray-500">Reach 12,000+ buyers in UAE - post FREE today</p>
+            <p className="text-sm text-purple-700">Reach 12,000+ buyers in UAE</p>
+            <p className="text-xs text-purple-500">Post FREE today - quick approval</p>
           </div>
         </div>
 
@@ -173,18 +197,45 @@ export default function PostPage() {
           <label className="block text-sm font-semibold text-gray-900 mb-2">Category *</label>
           <select
             value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value, specs: {} })}
             className={`w-full p-4 bg-white border rounded-xl text-gray-900 ${
               errors.category ? 'border-red-500' : 'border-gray-200'
             }`}
           >
             <option value="">-- Select Category --</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
+              <option key={cat.id} value={cat.id}>{cat.emoji} {cat.name}</option>
             ))}
           </select>
           {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
         </div>
+
+        {/* Category-specific specifications */}
+        {currentSpecs.length > 0 && (
+          <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+            <label className="block text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Info className="w-4 h-4 text-purple-500" />
+              {formData.category} Specifications
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {currentSpecs.map((spec) => (
+                <div key={spec}>
+                  <label className="block text-xs text-gray-500 mb-1">{spec}</label>
+                  <input
+                    type="text"
+                    placeholder={`Enter ${spec}`}
+                    value={formData.specs[spec] || ''}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      specs: { ...prev.specs, [spec]: e.target.value }
+                    }))}
+                    className="w-full p-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Ad Title */}
         <div className="mb-4">
@@ -204,15 +255,26 @@ export default function PostPage() {
         {/* Price */}
         <div className="mb-4">
           <label className="block text-sm font-semibold text-gray-900 mb-2">Price (AED) *</label>
-          <input
-            type="number"
-            placeholder="0 for free / negotiable"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            className={`w-full p-4 bg-white border rounded-xl text-gray-900 placeholder-gray-400 ${
-              errors.price ? 'border-red-500' : 'border-gray-200'
-            }`}
-          />
+          <div className="flex gap-2">
+            <input
+              type="number"
+              placeholder="0 for free / negotiable"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              className={`flex-1 p-4 bg-white border rounded-xl text-gray-900 placeholder-gray-400 ${
+                errors.price ? 'border-red-500' : 'border-gray-200'
+              }`}
+            />
+            <select
+              value={formData.priceType}
+              onChange={(e) => setFormData({ ...formData, priceType: e.target.value })}
+              className="p-4 bg-white border border-gray-200 rounded-xl text-gray-900"
+            >
+              {priceTypes.map((type) => (
+                <option key={type.id} value={type.id}>{type.name}</option>
+              ))}
+            </select>
+          </div>
           {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
         </div>
 
@@ -233,13 +295,13 @@ export default function PostPage() {
 
         {/* Location */}
         <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-900 mb-2">Location</label>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">Location (UAE)</label>
           <select
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             className="w-full p-4 bg-white border border-gray-200 rounded-xl text-gray-900"
           >
-            {locations.map((loc) => (
+            {uaeLocations.map((loc) => (
               <option key={loc} value={loc}>{loc}</option>
             ))}
           </select>
@@ -262,7 +324,9 @@ export default function PostPage() {
 
         {/* Photos */}
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-2">Photos</label>
+          <label className="block text-sm font-semibold text-gray-900 mb-2">
+            Photos <span className="text-gray-400 font-normal">(Max {MAX_IMAGES} images)</span>
+          </label>
           <input
             ref={fileInputRef}
             type="file"
@@ -284,16 +348,17 @@ export default function PostPage() {
                     }))}
                     className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
                   >
-                    x
+                    <X className="w-3 h-3" />
                   </button>
                 </div>
               ))}
-              {formData.photos.length < 8 && (
+              {formData.photos.length < MAX_IMAGES && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400"
+                  className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400"
                 >
-                  +
+                  <span className="text-2xl">+</span>
+                  <span className="text-xs">{formData.photos.length}/{MAX_IMAGES}</span>
                 </button>
               )}
             </div>
@@ -303,10 +368,13 @@ export default function PostPage() {
               className="w-full p-8 border-2 border-dashed border-gray-300 rounded-xl text-center bg-gray-50"
             >
               <span className="text-4xl block mb-2">📷</span>
-              <p className="text-gray-500">Tap to add up to 8 photos</p>
+              <p className="text-gray-500">Tap to add up to {MAX_IMAGES} photos</p>
             </button>
           )}
-          <p className="text-xs text-gray-400 mt-1">Watermark will be added automatically</p>
+          <div className="flex items-center gap-2 mt-2 p-2 bg-amber-50 rounded-lg">
+            <span className="text-amber-500">💧</span>
+            <p className="text-xs text-amber-700">Watermark &quot;DubaiKismag.com&quot; will be added automatically to protect your images</p>
+          </div>
         </div>
 
         {/* Select Plan */}
@@ -327,7 +395,7 @@ export default function PostPage() {
                   {plan.icon && <span>{plan.icon}</span>}
                   {plan.name}
                 </p>
-                <p className="text-xl font-bold text-purple-600">AED {plan.price}</p>
+                <p className="text-xl font-bold text-purple-600">{plan.price === 0 ? 'FREE' : `AED ${plan.price}`}</p>
                 <p className="text-xs text-gray-400">{plan.duration}</p>
               </button>
             ))}
@@ -342,6 +410,17 @@ export default function PostPage() {
           Post Ad Now - {formData.plan === 'free' ? 'FREE' : `AED ${plans.find(p => p.id === formData.plan)?.price}`}
         </button>
       </main>
+
+      {/* Success Modal */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-3xl p-8 text-center max-w-sm w-full">
+            <span className="text-6xl block mb-4">✅</span>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Ad Posted!</h2>
+            <p className="text-gray-500">Your ad is now live and visible to buyers.</p>
+          </div>
+        </div>
+      )}
 
       <BottomNavigation />
       <AuthModal />

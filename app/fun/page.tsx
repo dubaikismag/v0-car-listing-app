@@ -231,41 +231,62 @@ export default function FunPage() {
               
               <div className="relative flex justify-center mb-6">
                 {/* Pointer */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10">
-                  <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-gray-900"></div>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
+                  <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[25px] border-l-transparent border-r-transparent border-t-amber-500 drop-shadow-lg"></div>
                 </div>
                 
                 {/* Wheel */}
                 <div 
-                  className="w-64 h-64 rounded-full border-4 border-gray-200 relative overflow-hidden"
+                  className="w-72 h-72 rounded-full border-8 border-amber-400 relative overflow-hidden shadow-xl"
                   style={{ 
                     transform: `rotate(${spinRotation}deg)`,
-                    transition: isSpinning ? 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
+                    transition: isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
+                    background: `conic-gradient(
+                      #f59e0b 0deg 60deg, 
+                      #8b5cf6 60deg 120deg, 
+                      #10b981 120deg 180deg, 
+                      #ef4444 180deg 240deg, 
+                      #3b82f6 240deg 300deg, 
+                      #ec4899 300deg 360deg
+                    )`
                   }}
                 >
+                  {/* Center Circle */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-white shadow-lg z-10 flex items-center justify-center">
+                    <span className="text-2xl">🎁</span>
+                  </div>
+                  
+                  {/* Prize Labels */}
                   {prizes.map((prize, i) => {
-                    const angle = (360 / prizes.length) * i
+                    const angle = (360 / prizes.length) * i + 30
+                    const radian = (angle - 90) * (Math.PI / 180)
+                    const radius = 100
+                    const x = Math.cos(radian) * radius
+                    const y = Math.sin(radian) * radius
                     return (
                       <div
                         key={i}
-                        className="absolute w-full h-full"
+                        className="absolute text-white text-xs font-bold text-center w-20"
                         style={{
-                          transform: `rotate(${angle}deg)`,
-                          clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 50%)',
-                          backgroundColor: prizeColors[i],
+                          top: `calc(50% + ${y}px)`,
+                          left: `calc(50% + ${x}px)`,
+                          transform: `translate(-50%, -50%) rotate(${angle}deg)`,
                         }}
                       >
-                        <span 
-                          className="absolute text-white text-xs font-bold whitespace-nowrap"
-                          style={{
-                            top: '20%',
-                            left: '60%',
-                            transform: 'rotate(30deg)',
-                          }}
-                        >
-                          {prize}
-                        </span>
+                        {prize}
                       </div>
+                    )
+                  })}
+                  
+                  {/* Divider Lines */}
+                  {prizes.map((_, i) => {
+                    const angle = (360 / prizes.length) * i
+                    return (
+                      <div
+                        key={`line-${i}`}
+                        className="absolute top-1/2 left-1/2 w-0.5 h-36 bg-white/30 origin-bottom"
+                        style={{ transform: `translate(-50%, -100%) rotate(${angle}deg)` }}
+                      />
                     )
                   })}
                 </div>
