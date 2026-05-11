@@ -42,21 +42,21 @@ export function BottomNavigation() {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center justify-center gap-0.5 min-w-[60px] py-1 transition-colors ${
-                isActive ? 'text-purple-700' : 'text-gray-400'
+                isActive ? 'text-purple-700' : 'text-purple-500'
               }`}
             >
               {item.icon === 'search' ? (
-                <Search className={`w-6 h-6 ${isActive ? 'text-purple-700' : 'text-gray-400'}`} />
+                <Search className={`w-6 h-6 ${isActive ? 'text-purple-700' : 'text-purple-500'}`} />
               ) : item.icon === 'menu' ? (
                 <div className="flex flex-col gap-1">
-                  <div className={`w-5 h-0.5 rounded ${isActive ? 'bg-purple-700' : 'bg-gray-400'}`} />
-                  <div className={`w-5 h-0.5 rounded ${isActive ? 'bg-purple-700' : 'bg-gray-400'}`} />
-                  <div className={`w-5 h-0.5 rounded ${isActive ? 'bg-purple-700' : 'bg-gray-400'}`} />
+                  <div className={`w-5 h-0.5 rounded ${isActive ? 'bg-purple-700' : 'bg-purple-500'}`} />
+                  <div className={`w-5 h-0.5 rounded ${isActive ? 'bg-purple-700' : 'bg-purple-500'}`} />
+                  <div className={`w-5 h-0.5 rounded ${isActive ? 'bg-purple-700' : 'bg-purple-500'}`} />
                 </div>
               ) : (
                 <span className="text-2xl">{item.emoji}</span>
               )}
-              <span className={`text-xs font-medium ${isActive ? 'text-purple-700' : 'text-gray-400'}`}>
+              <span className={`text-xs font-medium ${isActive ? 'text-purple-700' : 'text-purple-500'}`}>
                 {item.label}
               </span>
             </Link>

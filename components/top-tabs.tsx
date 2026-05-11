@@ -64,7 +64,7 @@ export function TopTabs({ onTabChange }: TopTabsProps) {
                 isPostTab
                   ? 'bg-purple-600 text-white'
                   : isActive
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-purple-100/80 text-purple-700 backdrop-blur-sm border border-purple-200/50'
                     : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
