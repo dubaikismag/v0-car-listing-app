@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import { useStore, type User } from './store'
+import { useAppStore, type User } from './store'
 
 interface AuthContextType {
   isAuthModalOpen: boolean
@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authMethod, setAuthMethod] = useState<'phone' | 'email' | null>(null)
   const [authValue, setAuthValue] = useState('')
   
-  const { user, setUser } = useStore()
+  const { user, setUser } = useAppStore()
 
   const openAuthModal = useCallback(() => {
     setIsAuthModalOpen(true)
