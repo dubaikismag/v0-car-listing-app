@@ -56,7 +56,7 @@ export default function BrowsePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-[#f5f3ff] pb-20">
       <Header />
       <TopTabs />
 

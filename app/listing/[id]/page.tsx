@@ -20,7 +20,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
 
   if (!listing) {
     return (
-      <div className="min-h-screen bg-[#f8f7fc] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f5f3ff] flex items-center justify-center">
         <div className="text-center">
           <span className="text-6xl block mb-4">🔍</span>
           <h1 className="text-xl font-bold mb-2">Listing Not Found</h1>
@@ -67,7 +67,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f7fc] pb-32">
+    <div className="min-h-screen bg-[#f5f3ff] pb-32">
       {/* Custom Header */}
       <div className="gradient-header text-white px-4 py-4 flex items-center justify-between sticky top-0 z-50">
         <button onClick={() => router.back()} className="p-2 -ml-2">

@@ -93,7 +93,7 @@ export default function FunPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#f8f7fc] pb-20">
+    <div className="min-h-screen bg-[#f5f3ff] pb-20">
       <Header />
       <TopTabs onTabChange={(tab) => {
         if (tab === 'Fun') return
