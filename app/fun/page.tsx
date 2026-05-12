@@ -59,7 +59,9 @@ export default function FunPage() {
   ])
   const [waterTank, setWaterTank] = useState(70)
 
-  const prizes = ['5 Coins', 'Spin Again!', 'AED 10', 'Free Boost', '20 Coins', 'AED 50']
+  // Prizes arranged clockwise starting from top (12 o'clock)
+  // The wheel rotates clockwise, pointer is fixed at top
+  const prizes = ['20 Coins', 'AED 50', '5 Coins', 'Spin Again!', 'AED 10', 'Free Boost']
   
   const quizQuestions = [
     { q: 'What is the capital of UAE?', options: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman'], correct: 1 },
@@ -103,11 +105,20 @@ export default function FunPage() {
     setIsSpinning(true)
     setSpinResult(null)
     
+    // Pick a random prize
     const randomIndex = Math.floor(Math.random() * prizes.length)
-    const segmentAngle = 360 / prizes.length
-    const targetAngle = 360 * 5 + (randomIndex * segmentAngle) + (segmentAngle / 2)
+    const segmentAngle = 360 / prizes.length // 60 degrees per segment
     
-    setSpinRotation(prev => prev + targetAngle)
+    // Calculate rotation: we need the winning segment to land at the TOP (pointer position)
+    // Wheel starts with segment 0 at top. To land segment N at top after rotation:
+    // We rotate so that segment N ends up at the top (0 degrees)
+    // Final rotation = base spins + offset to bring segment to top
+    const baseSpins = 360 * 5 // 5 full rotations for visual effect
+    const segmentOffset = randomIndex * segmentAngle // Where this segment starts
+    const halfSegment = segmentAngle / 2 // Center of segment
+    const targetRotation = baseSpins + segmentOffset + halfSegment
+    
+    setSpinRotation(targetRotation)
     
     setTimeout(() => {
       setSpinResult(prizes[randomIndex])
@@ -424,22 +435,26 @@ export default function FunPage() {
               </div>
               
               <div className="relative flex justify-center mb-6">
+                {/* Pointer at top - pointing down at wheel */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
                   <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[25px] border-l-transparent border-r-transparent border-t-purple-700 drop-shadow-lg"></div>
                 </div>
                 
+                {/* Wheel - segments start from top (12 o'clock) going clockwise */}
                 <div 
                   className="w-64 h-64 rounded-full border-8 border-purple-200 relative overflow-hidden shadow-xl"
                   style={{ 
                     transform: `rotate(${spinRotation}deg)`,
                     transition: isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
-                    background: `conic-gradient(
-                      #f59e0b 0deg 60deg, 
-                      #8b5cf6 60deg 120deg, 
-                      #10b981 120deg 180deg, 
-                      #ef4444 180deg 240deg, 
-                      #3b82f6 240deg 300deg, 
-                      #ec4899 300deg 360deg
+                    // Conic gradient starts from top and goes clockwise
+                    // Offset by -90deg so first segment is at top
+                    background: `conic-gradient(from -60deg,
+                      #3b82f6 0deg 60deg,
+                      #ec4899 60deg 120deg, 
+                      #f59e0b 120deg 180deg, 
+                      #eab308 180deg 240deg,
+                      #10b981 240deg 300deg, 
+                      #ef4444 300deg 360deg
                     )`
                   }}
                 >
@@ -447,10 +462,12 @@ export default function FunPage() {
                     <span className="text-2xl">🎁</span>
                   </div>
                   
+                  {/* Prize labels positioned in center of each segment */}
                   {prizes.map((prize, i) => {
-                    const angle = (360 / prizes.length) * i + 30
+                    const segmentAngle = 360 / prizes.length
+                    const angle = segmentAngle * i + (segmentAngle / 2) - 60 // Center of segment, offset to match gradient
                     const radian = (angle - 90) * (Math.PI / 180)
-                    const radius = 90
+                    const radius = 85
                     const x = Math.cos(radian) * radius
                     const y = Math.sin(radian) * radius
                     return (
@@ -460,7 +477,7 @@ export default function FunPage() {
                         style={{
                           top: `calc(50% + ${y}px)`,
                           left: `calc(50% + ${x}px)`,
-                          transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+                          transform: `translate(-50%, -50%) rotate(${angle + 90}deg)`,
                         }}
                       >
                         {prize}
@@ -701,9 +718,15 @@ export default function FunPage() {
               Clear
             </button>
             
-            {wordLetters.length === 0 && (
+            {wordLetters.length === 0 && guessedWord.length > 0 && (
               <div className="mt-4 p-3 bg-green-50 rounded-xl text-center">
                 <p className="font-bold text-green-700">Correct! +15 Coins</p>
+                <button 
+                  onClick={() => { addCoins(15); initWordPuzzle() }}
+                  className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium"
+                >
+                  Play Again
+                </button>
               </div>
             )}
           </div>
