@@ -444,49 +444,71 @@ export default function FunPage() {
                   <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[25px] border-l-transparent border-r-transparent border-t-purple-700 drop-shadow-lg"></div>
                 </div>
                 
-                {/* Wheel - conic-gradient from -90deg means segment 0 starts at top (12 o'clock) */}
+                {/* Wheel with SVG for precise segment labels */}
                 <div 
-                  className="w-64 h-64 rounded-full border-8 border-purple-200 relative overflow-hidden shadow-xl"
+                  className="w-64 h-64 relative"
                   style={{ 
                     transform: `rotate(${spinRotation}deg)`,
                     transition: isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
-                    background: `conic-gradient(from -90deg,
-                      #3b82f6 0deg 60deg,
-                      #ec4899 60deg 120deg, 
-                      #f59e0b 120deg 180deg, 
-                      #eab308 180deg 240deg,
-                      #10b981 240deg 300deg, 
-                      #ef4444 300deg 360deg
-                    )`
                   }}
                 >
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white shadow-lg z-10 flex items-center justify-center">
-                    <span className="text-2xl">🎁</span>
-                  </div>
+                  <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-xl">
+                    {/* Wheel segments */}
+                    {prizes.map((prize, i) => {
+                      const startAngle = i * 60 - 90 // Start from top (-90deg)
+                      const endAngle = startAngle + 60
+                      const startRad = (startAngle * Math.PI) / 180
+                      const endRad = (endAngle * Math.PI) / 180
+                      const x1 = 100 + 92 * Math.cos(startRad)
+                      const y1 = 100 + 92 * Math.sin(startRad)
+                      const x2 = 100 + 92 * Math.cos(endRad)
+                      const y2 = 100 + 92 * Math.sin(endRad)
+                      const colors = ['#3b82f6', '#ec4899', '#f59e0b', '#eab308', '#10b981', '#ef4444']
+                      return (
+                        <path
+                          key={i}
+                          d={`M 100 100 L ${x1} ${y1} A 92 92 0 0 1 ${x2} ${y2} Z`}
+                          fill={colors[i]}
+                          stroke="#e9d5ff"
+                          strokeWidth="3"
+                        />
+                      )
+                    })}
+                    
+                    {/* Prize labels - text along radius, reading outward */}
+                    {prizes.map((prize, i) => {
+                      const midAngle = i * 60 - 90 + 30 // Center of segment
+                      const midRad = (midAngle * Math.PI) / 180
+                      const textRadius = 62
+                      const tx = 100 + textRadius * Math.cos(midRad)
+                      const ty = 100 + textRadius * Math.sin(midRad)
+                      // Rotate text to be readable (pointing outward from center)
+                      const textRotation = midAngle + 90
+                      return (
+                        <text
+                          key={i}
+                          x={tx}
+                          y={ty}
+                          fill="white"
+                          fontSize="9"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          transform={`rotate(${textRotation}, ${tx}, ${ty})`}
+                        >
+                          {prize}
+                        </text>
+                      )
+                    })}
+                    
+                    {/* Center circle */}
+                    <circle cx="100" cy="100" r="22" fill="white" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))" />
+                  </svg>
                   
-                  {/* Prize labels - positioned at center of each 60deg segment */}
-                  {prizes.map((prize, i) => {
-                    // Segment i spans from i*60 to (i+1)*60 degrees
-                    // Center of segment is at i*60 + 30 degrees from top (going clockwise)
-                    const angleDeg = i * segmentAngle + (segmentAngle / 2) // center of segment
-                    const angleRad = (angleDeg - 90) * (Math.PI / 180) // -90 to convert to CSS coords (0 = right, we want 0 = top)
-                    const radius = 85
-                    const x = Math.cos(angleRad) * radius
-                    const y = Math.sin(angleRad) * radius
-                    return (
-                      <div
-                        key={i}
-                        className="absolute text-white text-[10px] font-bold text-center w-16"
-                        style={{
-                          top: `calc(50% + ${y}px)`,
-                          left: `calc(50% + ${x}px)`,
-                          transform: `translate(-50%, -50%) rotate(${angleDeg}deg)`,
-                        }}
-                      >
-                        {prize}
-                      </div>
-                    )
-                  })}
+                  {/* Center gift icon */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl">
+                    🎁
+                  </div>
                 </div>
               </div>
 
