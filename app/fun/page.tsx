@@ -5,7 +5,6 @@ import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
-import { DesktopSidebar, DesktopRightSidebar } from '@/components/desktop-layout'
 import { useAppStore } from '@/lib/store'
 import { X, ArrowLeft } from 'lucide-react'
 
@@ -272,10 +271,7 @@ export default function FunPage() {
   }
 
   return (
-  <div className="min-h-screen bg-[#f5f3ff] flex">
-  <DesktopSidebar />
-  
-  <div className="flex-1 lg:pb-0 pb-20">
+  <div className="min-h-screen bg-[#f5f3ff] pb-20">
   <Header />
   <TopTabs onTabChange={(tab) => {
   if (tab === 'Fun') return
@@ -943,12 +939,7 @@ export default function FunPage() {
         </div>
       )}
 
-  <div className="lg:hidden">
-    <BottomNavigation />
-  </div>
-  </div>
-  
-  <DesktopRightSidebar />
+  <BottomNavigation />
   <AuthModal />
   </div>
   )

@@ -6,7 +6,6 @@ import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
-import { DesktopSidebar, DesktopRightSidebar } from '@/components/desktop-layout'
 import { useAppStore, ADMIN_EMAIL } from '@/lib/store'
 import { ChevronRight, X, Camera, ArrowLeft, Edit2 } from 'lucide-react'
 
@@ -79,14 +78,11 @@ export default function MorePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#f5f3ff] flex">
-      <DesktopSidebar />
-      
-      <div className="flex-1 lg:pb-0 pb-20">
-        <Header />
-        <TopTabs />
+    <div className="min-h-screen bg-[#f5f3ff] pb-20">
+      <Header />
+      <TopTabs />
 
-        <main className="lg:max-w-4xl lg:mx-auto">
+      <main>
         {/* Profile Header */}
         <div className="gradient-purple px-4 py-8 text-center relative">
           {/* Edit Profile Button */}
@@ -354,12 +350,7 @@ export default function MorePage() {
         </div>
       )}
 
-        <div className="lg:hidden">
-          <BottomNavigation />
-        </div>
-      </div>
-      
-      <DesktopRightSidebar />
+      <BottomNavigation />
       <AuthModal />
     </div>
   )
