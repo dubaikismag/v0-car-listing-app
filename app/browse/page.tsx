@@ -7,6 +7,7 @@ import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
+import { DesktopSidebar, DesktopRightSidebar } from '@/components/desktop-layout'
 import { useAppStore, categories as storeCategories } from '@/lib/store'
 import { ListingCard } from '@/components/listing-card'
 import { Filter, X, MapPin, Check } from 'lucide-react'
@@ -53,14 +54,17 @@ function BrowseContent() {
   )
 
   return (
-    <div className="min-h-screen bg-[#f5f3ff] pb-20">
-      <Header 
-        onSearch={handleSearch}
-        onFilter={() => setShowFilterModal(true)}
-      />
-      <TopTabs />
+    <div className="min-h-screen bg-[#f5f3ff] flex">
+      <DesktopSidebar />
+      
+      <div className="flex-1 lg:pb-0 pb-20">
+        <Header 
+          onSearch={handleSearch}
+          onFilter={() => setShowFilterModal(true)}
+        />
+        <TopTabs />
 
-      <main className="px-4 py-4">
+        <main className="px-4 py-4 lg:max-w-4xl lg:mx-auto">
         {/* Category Filters */}
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
           {categoryFilters.map((cat) => (
@@ -118,9 +122,9 @@ function BrowseContent() {
           </div>
         )}
 
-        {/* Listings Grid */}
+        {/* Listings Grid - 2 cols mobile, 3 cols tablet, 4 cols desktop */}
         {filteredListings.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {filteredListings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
@@ -206,7 +210,13 @@ function BrowseContent() {
         </div>
       )}
 
-      <BottomNavigation />
+        {/* Mobile Bottom Navigation */}
+        <div className="lg:hidden">
+          <BottomNavigation />
+        </div>
+      </div>
+      
+      <DesktopRightSidebar />
       <AuthModal />
     </div>
   )
