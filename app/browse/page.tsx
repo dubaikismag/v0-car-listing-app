@@ -7,11 +7,18 @@ import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
-import { useAppStore, smartFilters, uaeLocationChips } from '@/lib/store'
+import { useAppStore, categories as storeCategories, smartFilters } from '@/lib/store'
 import { ListingCard } from '@/components/listing-card'
-import { Filter, X, MapPin, Check } from 'lucide-react'
+import { X, Check } from 'lucide-react'
 
 
+
+// Get subcategories based on selected main category
+function getSubcategories(categoryName: string) {
+  const category = storeCategories.find(c => c.name === categoryName)
+  if (!category) return []
+  return category.subcategories.map(sub => ({ id: sub, name: sub }))
+}
 
 function BrowseContent() {
   const searchParams = useSearchParams()
@@ -19,15 +26,19 @@ function BrowseContent() {
   
   const initialCategory = searchParams.get('category') || 'All'
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
+  const [selectedSubcategory, setSelectedSubcategory] = useState('All')
   const [activeFilters, setActiveFilters] = useState<string[]>(['newest'])
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [localSearch, setLocalSearch] = useState(searchQuery)
-  const [selectedLocationChip, setSelectedLocationChip] = useState('dubai')
+
+  // Get dynamic subcategories for current category
+  const subcategories = selectedCategory !== 'All' ? getSubcategories(selectedCategory) : []
 
   useEffect(() => {
     const category = searchParams.get('category')
     if (category) {
       setSelectedCategory(category)
+      setSelectedSubcategory('All')
     }
   }, [searchParams])
 
@@ -38,14 +49,7 @@ function BrowseContent() {
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId)
-  }
-
-  const handleLocationChipClick = (locationId: string) => {
-    setSelectedLocationChip(locationId)
-    const location = uaeLocationChips.find(l => l.id === locationId)
-    if (location) {
-      setSelectedLocation(location.name)
-    }
+    setSelectedSubcategory('All')
   }
 
   const toggleFilter = (filterId: string) => {
@@ -68,6 +72,12 @@ function BrowseContent() {
     localSearch,
     activeFilters.includes('nearme') ? selectedLocation : undefined
   ).filter(listing => {
+    // Filter by subcategory
+    if (selectedSubcategory && selectedSubcategory !== 'All') {
+      const matchesSubcategory = listing.subcategory === selectedSubcategory || 
+        listing.title.toLowerCase().includes(selectedSubcategory.toLowerCase())
+      if (!matchesSubcategory) return false
+    }
     // Filter by active smart filters
     if (activeFilters.includes('verified') && !listing.verified) return false
     if (activeFilters.includes('featured') && !listing.isFeatured) return false
@@ -84,25 +94,26 @@ function BrowseContent() {
       <TopTabs />
 
       <main className="px-4 py-4">
-        {/* UAE Location Chips */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
-          {uaeLocationChips.map((loc) => (
-            <button
-              key={loc.id}
-              onClick={() => handleLocationChipClick(loc.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                selectedLocationChip === loc.id
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <span>{loc.flag}</span>
-              <span>{loc.name}</span>
-            </button>
-          ))}
-        </div>
+        {/* Dynamic Subcategory Chips - Shows subcategories based on selected main category */}
+        {subcategories.length > 0 && (
+          <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
+            {subcategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => setSelectedSubcategory(sub.id)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                  selectedSubcategory === sub.id
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Smart Filter Chips - Clean, minimal filters (only show most important ones) */}
+        {/* Smart Filter Chips - Clean, minimal filters */}
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
           {smartFilters.slice(0, 6).map((filter) => (
             <button
@@ -123,12 +134,13 @@ function BrowseContent() {
         {/* Results Count */}
         <div className="flex items-center justify-between mb-3">
           <p className="text-gray-500 text-sm">{filteredListings.length} listings found</p>
-          {(localSearch || activeFilters.length > 1) && (
+          {(localSearch || activeFilters.length > 1 || selectedSubcategory !== 'All') && (
             <button 
               onClick={() => { 
                 setLocalSearch(''); 
                 setSearchQuery(''); 
                 setActiveFilters(['newest']);
+                setSelectedSubcategory('All');
               }}
               className="text-purple-600 text-sm flex items-center gap-1"
             >
@@ -136,14 +148,6 @@ function BrowseContent() {
             </button>
           )}
         </div>
-
-        {/* Location indicator if "Near me" is active */}
-        {activeFilters.includes('nearme') && (
-          <div className="mb-4 p-3 bg-purple-50 rounded-xl flex items-center gap-2 text-sm">
-            <MapPin className="w-4 h-4 text-purple-600" />
-            <span className="text-purple-700">Showing listings near: <strong>{selectedLocation}</strong></span>
-          </div>
-        )}
 
         {/* Listings Grid */}
         {filteredListings.length > 0 ? (
@@ -160,6 +164,7 @@ function BrowseContent() {
             <button 
               onClick={() => { 
                 setSelectedCategory('All'); 
+                setSelectedSubcategory('All');
                 setActiveFilters(['newest']); 
                 setLocalSearch(''); 
                 setSearchQuery(''); 
@@ -183,25 +188,27 @@ function BrowseContent() {
               </button>
             </div>
             <div className="px-4 py-4">
-              {/* Location Selection */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Location</h3>
-                <div className="flex flex-wrap gap-2">
-                  {uaeLocationChips.map((loc) => (
-                    <button
-                      key={loc.id}
-                      onClick={() => handleLocationChipClick(loc.id)}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium ${
-                        selectedLocationChip === loc.id
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {loc.flag} {loc.name}
-                    </button>
-                  ))}
+              {/* Subcategory Selection */}
+              {subcategories.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-3">Subcategory</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {subcategories.map((sub) => (
+                      <button
+                        key={sub.id}
+                        onClick={() => setSelectedSubcategory(sub.id)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium ${
+                          selectedSubcategory === sub.id
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {sub.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Smart Filters */}
               <div className="mb-6">
