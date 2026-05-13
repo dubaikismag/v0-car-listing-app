@@ -158,31 +158,24 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
 
   return (
     <Link href={`/listing/${listing.id}`} className="block">
-      <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm h-[280px] flex flex-col ${listing.badge ? bgColors[listing.badge] || 'bg-white' : 'bg-white'} ${isPremium ? 'premium-card' : ''}`}>
+      <div className={`rounded-xl overflow-hidden border border-gray-100 shadow-sm h-[280px] flex flex-col bg-white ${isPremium ? 'premium-card' : ''}`}>
         {/* Image Section - Fixed height */}
         <div className="relative h-28 flex items-center justify-center flex-shrink-0">
-          {/* Premium Star Indicator */}
-          {isPremium && (
-            <span className="absolute top-2 left-2 sparkle-star text-lg z-10">
-              ⭐
+          {/* Badge - Small, top-left corner, max 1 badge */}
+          {listing.badge && (
+            <span className={`absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-bold ${badgeColors[listing.badge]}`}>
+              {listing.badge}
             </span>
           )}
-          {/* Tag/Bookmark Icon - matching reference design */}
+          {/* Tag/Bookmark Icon - top-right */}
           <button
             onClick={handleSave}
             className="absolute top-2 right-2 p-1 rounded-full bg-white/90 shadow-sm"
           >
             <TagIcon saved={isSaved} />
           </button>
-          {/* Emoji with Badge centered together */}
-          <div className="flex items-center justify-center gap-1">
-            {listing.badge && (
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badgeColors[listing.badge]} ${isPremium ? 'premium-badge' : ''}`}>
-                {listing.badge}
-              </span>
-            )}
-            <span className="text-5xl">{listing.emoji}</span>
-          </div>
+          {/* Emoji - Clean, centered, no overlap */}
+          <span className="text-5xl">{listing.emoji}</span>
         </div>
         
         {/* Content - Flex grow */}

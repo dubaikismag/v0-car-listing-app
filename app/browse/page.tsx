@@ -7,22 +7,11 @@ import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
-import { useAppStore, categories as storeCategories, smartFilters, uaeLocationChips } from '@/lib/store'
+import { useAppStore, smartFilters, uaeLocationChips } from '@/lib/store'
 import { ListingCard } from '@/components/listing-card'
 import { Filter, X, MapPin, Check } from 'lucide-react'
 
-// Main category filters (Line 2 - based on main menu selection)
-const mainCategories = [
-  { id: 'All', name: 'All', emoji: '📋' },
-  ...storeCategories.map(c => ({ id: c.name, name: c.name, emoji: c.emoji }))
-]
 
-// Get subcategories based on selected main category
-function getSubcategories(categoryName: string) {
-  const category = storeCategories.find(c => c.name === categoryName)
-  if (!category) return []
-  return category.subcategories.map(sub => ({ id: sub, name: sub }))
-}
 
 function BrowseContent() {
   const searchParams = useSearchParams()
@@ -30,20 +19,15 @@ function BrowseContent() {
   
   const initialCategory = searchParams.get('category') || 'All'
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
-  const [selectedSubcategory, setSelectedSubcategory] = useState('All')
   const [activeFilters, setActiveFilters] = useState<string[]>(['newest'])
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [localSearch, setLocalSearch] = useState(searchQuery)
   const [selectedLocationChip, setSelectedLocationChip] = useState('dubai')
 
-  // Get dynamic subcategories for current category
-  const subcategories = selectedCategory !== 'All' ? getSubcategories(selectedCategory) : []
-
   useEffect(() => {
     const category = searchParams.get('category')
     if (category) {
       setSelectedCategory(category)
-      setSelectedSubcategory('All')
     }
   }, [searchParams])
 
@@ -54,7 +38,6 @@ function BrowseContent() {
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId)
-    setSelectedSubcategory('All')
   }
 
   const handleLocationChipClick = (locationId: string) => {
@@ -85,10 +68,6 @@ function BrowseContent() {
     localSearch,
     activeFilters.includes('nearme') ? selectedLocation : undefined
   ).filter(listing => {
-    // Additional filtering based on subcategory
-    if (selectedSubcategory && selectedSubcategory !== 'All') {
-      return listing.subcategory === selectedSubcategory || listing.title.toLowerCase().includes(selectedSubcategory.toLowerCase())
-    }
     // Filter by active smart filters
     if (activeFilters.includes('verified') && !listing.verified) return false
     if (activeFilters.includes('featured') && !listing.isFeatured) return false
@@ -123,56 +102,19 @@ function BrowseContent() {
           ))}
         </div>
 
-        {/* Main Category Filters */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
-          {mainCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategoryChange(cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-all ${
-                selectedCategory === cat.id
-                  ? 'bg-purple-100/80 text-purple-700 border-purple-300/60 backdrop-blur-sm shadow-sm'
-                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {cat.emoji && <span>{cat.emoji}</span>}
-              <span>{cat.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Dynamic Subcategory Chips (Line 2) - Only show when a category is selected */}
-        {subcategories.length > 0 && (
-          <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
-            {subcategories.map((sub) => (
-              <button
-                key={sub.id}
-                onClick={() => setSelectedSubcategory(sub.id)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                  selectedSubcategory === sub.id
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {sub.name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Smart Filter Chips (Line 3) */}
+        {/* Smart Filter Chips - Clean, minimal filters (only show most important ones) */}
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
-          {smartFilters.map((filter) => (
+          {smartFilters.slice(0, 6).map((filter) => (
             <button
               key={filter.id}
               onClick={() => toggleFilter(filter.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                 activeFilters.includes(filter.id)
-                  ? 'bg-amber-100/80 text-amber-700 border border-amber-300/60 backdrop-blur-sm shadow-sm'
+                  ? 'bg-amber-100/80 text-amber-700 border border-amber-300/60'
                   : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <span>{filter.emoji}</span>
+              <span className="text-xs">{filter.emoji}</span>
               <span>{filter.name}</span>
             </button>
           ))}
@@ -181,13 +123,12 @@ function BrowseContent() {
         {/* Results Count */}
         <div className="flex items-center justify-between mb-3">
           <p className="text-gray-500 text-sm">{filteredListings.length} listings found</p>
-          {(localSearch || activeFilters.length > 1 || selectedSubcategory !== 'All') && (
+          {(localSearch || activeFilters.length > 1) && (
             <button 
               onClick={() => { 
                 setLocalSearch(''); 
                 setSearchQuery(''); 
                 setActiveFilters(['newest']);
-                setSelectedSubcategory('All');
               }}
               className="text-purple-600 text-sm flex items-center gap-1"
             >
@@ -219,7 +160,6 @@ function BrowseContent() {
             <button 
               onClick={() => { 
                 setSelectedCategory('All'); 
-                setSelectedSubcategory('All');
                 setActiveFilters(['newest']); 
                 setLocalSearch(''); 
                 setSearchQuery(''); 
@@ -262,48 +202,6 @@ function BrowseContent() {
                   ))}
                 </div>
               </div>
-
-              {/* Category Selection */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Category</h3>
-                <div className="flex flex-wrap gap-2">
-                  {mainCategories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleCategoryChange(cat.id)}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium ${
-                        selectedCategory === cat.id
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {cat.emoji} {cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Subcategory Selection */}
-              {subcategories.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-3">Subcategory</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {subcategories.map((sub) => (
-                      <button
-                        key={sub.id}
-                        onClick={() => setSelectedSubcategory(sub.id)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium ${
-                          selectedSubcategory === sub.id
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {sub.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Smart Filters */}
               <div className="mb-6">
