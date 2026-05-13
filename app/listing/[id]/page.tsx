@@ -3,12 +3,6 @@
 import { use, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return []; 
-}
-
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
 import { useAppStore } from '@/lib/store'
