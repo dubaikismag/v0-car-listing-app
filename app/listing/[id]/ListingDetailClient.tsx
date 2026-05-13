@@ -2,68 +2,57 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Heart, Share2, X, MapPin, MessageCircle, Phone } from 'lucide-react'
 
 export default function ListingDetailClient({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [isLiked, setIsLiked] = useState(false)
 
-  // This is a placeholder since we are making sure the build passes first
   const listing = {
-    title: "Premium Vehicle",
-    price: "0",
-    location: "Dubai, UAE",
-    description: "Loading details...",
+    title: "Premium Listing",
+    price: "Contact for Price",
+    location: "Canada",
+    description: "Details loading...",
     emoji: "🚗",
-    whatsapp: "971000000000",
-    phone: "971000000000"
-  }
-
-  const handleWhatsApp = () => {
-    window.open(`https://wa.me/${listing.whatsapp}`, '_blank')
+    phone: "0000000000"
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f3ff] pb-32">
-      <div className="bg-purple-600 text-white px-4 py-4 flex items-center justify-between sticky top-0 z-50">
-        <button onClick={() => router.back()} className="p-2 flex items-center gap-2">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="font-bold">Listing Details</h1>
-        <div className="flex gap-1">
-          <button onClick={() => setIsLiked(!isLiked)} className="p-2">
-            <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-          </button>
-          <button onClick={() => router.push('/')} className="p-2">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <div style={{ minHeight: '100 screen', backgroundColor: '#f5f3ff', paddingBottom: '80px', fontFamily: 'sans-serif' }}>
+      {/* Header */}
+      <div style={{ backgroundColor: '#7c3aed', color: 'white', padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer' }}>←</button>
+        <b style={{ fontSize: '14px' }}>Listing Details</b>
+        <button onClick={() => setIsLiked(!isLiked)} style={{ background: 'none', border: 'none', color: isLiked ? 'red' : 'white', fontSize: '20px' }}>{isLiked ? '❤️' : '♡'}</button>
       </div>
 
-      <main className="px-4 py-4">
-        <div className="relative h-56 bg-white rounded-2xl flex items-center justify-center mb-4 border shadow-sm">
-          <span className="text-7xl">{listing.emoji}</span>
+      <main style={{ padding: '20px' }}>
+        {/* Image Placeholder */}
+        <div style={{ height: '200px', backgroundColor: 'white', borderRadius: '15px', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '20px', border: '1px solid #ddd' }}>
+          <span style={{ fontSize: '60px' }}>{listing.emoji}</span>
         </div>
 
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">{listing.title}</h2>
-          <p className="text-gray-500 flex items-center gap-1 mt-2">
-            <MapPin className="w-4 h-4" /> {listing.location}
-          </p>
-        </div>
+        <h2 style={{ margin: '0 0 5px 0' }}>{listing.title}</h2>
+        <p style={{ color: '#666', margin: '0 0 20px 0' }}>📍 {listing.location}</p>
 
-        <div className="bg-white rounded-xl p-4 border shadow-sm">
-          <h3 className="font-bold mb-2">Description</h3>
-          <p className="text-gray-600">{listing.description}</p>
+        <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '12px', border: '1px solid #eee' }}>
+          <h3 style={{ margin: '0 0 10px 0' }}>Description</h3>
+          <p style={{ color: '#444', lineHeight: '1.5' }}>{listing.description}</p>
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex gap-3">
-        <button onClick={handleWhatsApp} className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2">
-          <MessageCircle className="w-5 h-5" /> WhatsApp
+      {/* Fixed Bottom Bar */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: 'white', padding: '15px', borderTop: '1px solid #eee', display: 'flex', gap: '10px' }}>
+        <button 
+          onClick={() => window.open(`https://wa.me/${listing.phone}`, '_blank')}
+          style={{ flex: 1, padding: '15px', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold' }}
+        >
+          WhatsApp
         </button>
-        <button onClick={() => window.location.href=`tel:${listing.phone}`} className="flex-1 py-4 bg-purple-600 text-white rounded-xl font-bold flex items-center justify-center gap-2">
-          <Phone className="w-5 h-5" /> Call
+        <button 
+          onClick={() => window.location.href = `tel:${listing.phone}`}
+          style={{ flex: 1, padding: '15px', backgroundColor: '#7c3aed', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold' }}
+        >
+          Call
         </button>
       </div>
     </div>
