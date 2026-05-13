@@ -7,36 +7,43 @@ import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
-import { useAppStore, categories as storeCategories } from '@/lib/store'
+import { useAppStore, categories as storeCategories, smartFilters, uaeLocationChips } from '@/lib/store'
 import { ListingCard } from '@/components/listing-card'
 import { Filter, X, MapPin, Check } from 'lucide-react'
 
-const categoryFilters = [
+// Main category filters (Line 2 - based on main menu selection)
+const mainCategories = [
   { id: 'All', name: 'All', emoji: '📋' },
   ...storeCategories.map(c => ({ id: c.name, name: c.name, emoji: c.emoji }))
 ]
 
-const sortFilters = [
-  { id: 'Newest', name: 'Newest', emoji: '🕐' },
-  { id: 'Price', name: 'Price', emoji: '💰' },
-  { id: 'Near me', name: 'Near me', emoji: '📍' },
-  { id: 'Verified', name: 'Verified', emoji: '✓' }
-]
+// Get subcategories based on selected main category
+function getSubcategories(categoryName: string) {
+  const category = storeCategories.find(c => c.name === categoryName)
+  if (!category) return []
+  return category.subcategories.map(sub => ({ id: sub, name: sub }))
+}
 
 function BrowseContent() {
   const searchParams = useSearchParams()
-  const { getFilteredListings, searchQuery, selectedLocation, setSearchQuery } = useAppStore()
+  const { getFilteredListings, searchQuery, selectedLocation, setSearchQuery, setSelectedLocation } = useAppStore()
   
   const initialCategory = searchParams.get('category') || 'All'
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
-  const [selectedSort, setSelectedSort] = useState('Newest')
+  const [selectedSubcategory, setSelectedSubcategory] = useState('All')
+  const [activeFilters, setActiveFilters] = useState<string[]>(['newest'])
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [localSearch, setLocalSearch] = useState(searchQuery)
+  const [selectedLocationChip, setSelectedLocationChip] = useState('dubai')
+
+  // Get dynamic subcategories for current category
+  const subcategories = selectedCategory !== 'All' ? getSubcategories(selectedCategory) : []
 
   useEffect(() => {
     const category = searchParams.get('category')
     if (category) {
       setSelectedCategory(category)
+      setSelectedSubcategory('All')
     }
   }, [searchParams])
 
@@ -45,12 +52,49 @@ function BrowseContent() {
     setSearchQuery(query)
   }
 
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId)
+    setSelectedSubcategory('All')
+  }
+
+  const handleLocationChipClick = (locationId: string) => {
+    setSelectedLocationChip(locationId)
+    const location = uaeLocationChips.find(l => l.id === locationId)
+    if (location) {
+      setSelectedLocation(location.name)
+    }
+  }
+
+  const toggleFilter = (filterId: string) => {
+    setActiveFilters(prev => 
+      prev.includes(filterId) 
+        ? prev.filter(f => f !== filterId)
+        : [...prev, filterId]
+    )
+  }
+
+  // Determine sort based on active filters
+  const sortFilter = activeFilters.includes('newest') ? 'Newest' 
+    : activeFilters.includes('price') ? 'Price'
+    : activeFilters.includes('nearme') ? 'Near me'
+    : 'Newest'
+
   const filteredListings = getFilteredListings(
     selectedCategory === 'All' ? undefined : selectedCategory,
-    selectedSort,
+    sortFilter,
     localSearch,
-    selectedSort === 'Near me' ? selectedLocation : undefined
-  )
+    activeFilters.includes('nearme') ? selectedLocation : undefined
+  ).filter(listing => {
+    // Additional filtering based on subcategory
+    if (selectedSubcategory && selectedSubcategory !== 'All') {
+      return listing.subcategory === selectedSubcategory || listing.title.toLowerCase().includes(selectedSubcategory.toLowerCase())
+    }
+    // Filter by active smart filters
+    if (activeFilters.includes('verified') && !listing.verified) return false
+    if (activeFilters.includes('featured') && !listing.isFeatured) return false
+    if (activeFilters.includes('withphotos') && (!listing.images || listing.images.length === 0)) return false
+    return true
+  })
 
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-20">
@@ -61,12 +105,30 @@ function BrowseContent() {
       <TopTabs />
 
       <main className="px-4 py-4">
-        {/* Category Filters */}
+        {/* UAE Location Chips */}
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
-          {categoryFilters.map((cat) => (
+          {uaeLocationChips.map((loc) => (
+            <button
+              key={loc.id}
+              onClick={() => handleLocationChipClick(loc.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                selectedLocationChip === loc.id
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <span>{loc.flag}</span>
+              <span>{loc.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Main Category Filters */}
+        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
+          {mainCategories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
+              onClick={() => handleCategoryChange(cat.id)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-all ${
                 selectedCategory === cat.id
                   ? 'bg-purple-100/80 text-purple-700 border-purple-300/60 backdrop-blur-sm shadow-sm'
@@ -79,20 +141,39 @@ function BrowseContent() {
           ))}
         </div>
 
-        {/* Sort Filters */}
+        {/* Dynamic Subcategory Chips (Line 2) - Only show when a category is selected */}
+        {subcategories.length > 0 && (
+          <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
+            {subcategories.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => setSelectedSubcategory(sub.id)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                  selectedSubcategory === sub.id
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Smart Filter Chips (Line 3) */}
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
-          {sortFilters.map((sort) => (
+          {smartFilters.map((filter) => (
             <button
-              key={sort.id}
-              onClick={() => setSelectedSort(sort.id)}
+              key={filter.id}
+              onClick={() => toggleFilter(filter.id)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                selectedSort === sort.id
+                activeFilters.includes(filter.id)
                   ? 'bg-amber-100/80 text-amber-700 border border-amber-300/60 backdrop-blur-sm shadow-sm'
                   : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <span>{sort.emoji}</span>
-              <span>{sort.name}</span>
+              <span>{filter.emoji}</span>
+              <span>{filter.name}</span>
             </button>
           ))}
         </div>
@@ -100,18 +181,23 @@ function BrowseContent() {
         {/* Results Count */}
         <div className="flex items-center justify-between mb-3">
           <p className="text-gray-500 text-sm">{filteredListings.length} listings found</p>
-          {localSearch && (
+          {(localSearch || activeFilters.length > 1 || selectedSubcategory !== 'All') && (
             <button 
-              onClick={() => { setLocalSearch(''); setSearchQuery(''); }}
+              onClick={() => { 
+                setLocalSearch(''); 
+                setSearchQuery(''); 
+                setActiveFilters(['newest']);
+                setSelectedSubcategory('All');
+              }}
               className="text-purple-600 text-sm flex items-center gap-1"
             >
-              Clear search <X className="w-3 h-3" />
+              Clear filters <X className="w-3 h-3" />
             </button>
           )}
         </div>
 
         {/* Location indicator if "Near me" is active */}
-        {selectedSort === 'Near me' && (
+        {activeFilters.includes('nearme') && (
           <div className="mb-4 p-3 bg-purple-50 rounded-xl flex items-center gap-2 text-sm">
             <MapPin className="w-4 h-4 text-purple-600" />
             <span className="text-purple-700">Showing listings near: <strong>{selectedLocation}</strong></span>
@@ -131,7 +217,13 @@ function BrowseContent() {
             <h3 className="text-lg font-bold text-gray-900 mb-2">No listings found</h3>
             <p className="text-gray-500 text-sm mb-4">Try adjusting your filters or search terms</p>
             <button 
-              onClick={() => { setSelectedCategory('All'); setSelectedSort('Newest'); setLocalSearch(''); setSearchQuery(''); }}
+              onClick={() => { 
+                setSelectedCategory('All'); 
+                setSelectedSubcategory('All');
+                setActiveFilters(['newest']); 
+                setLocalSearch(''); 
+                setSearchQuery(''); 
+              }}
               className="px-6 py-2 bg-purple-600 text-white rounded-full font-semibold text-sm"
             >
               Clear Filters
@@ -151,14 +243,34 @@ function BrowseContent() {
               </button>
             </div>
             <div className="px-4 py-4">
+              {/* Location Selection */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Location</h3>
+                <div className="flex flex-wrap gap-2">
+                  {uaeLocationChips.map((loc) => (
+                    <button
+                      key={loc.id}
+                      onClick={() => handleLocationChipClick(loc.id)}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium ${
+                        selectedLocationChip === loc.id
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {loc.flag} {loc.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Category Selection */}
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-900 mb-3">Category</h3>
                 <div className="flex flex-wrap gap-2">
-                  {categoryFilters.map((cat) => (
+                  {mainCategories.map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
+                      onClick={() => handleCategoryChange(cat.id)}
                       className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium ${
                         selectedCategory === cat.id
                           ? 'bg-purple-600 text-white'
@@ -171,25 +283,47 @@ function BrowseContent() {
                 </div>
               </div>
 
-              {/* Sort Selection */}
+              {/* Subcategory Selection */}
+              {subcategories.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-3">Subcategory</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {subcategories.map((sub) => (
+                      <button
+                        key={sub.id}
+                        onClick={() => setSelectedSubcategory(sub.id)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium ${
+                          selectedSubcategory === sub.id
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {sub.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Smart Filters */}
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Sort By</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">Quick Filters</h3>
                 <div className="space-y-2">
-                  {sortFilters.map((sort) => (
+                  {smartFilters.map((filter) => (
                     <button
-                      key={sort.id}
-                      onClick={() => setSelectedSort(sort.id)}
+                      key={filter.id}
+                      onClick={() => toggleFilter(filter.id)}
                       className={`w-full flex items-center justify-between p-4 rounded-xl border ${
-                        selectedSort === sort.id
+                        activeFilters.includes(filter.id)
                           ? 'border-purple-500 bg-purple-50'
                           : 'border-gray-200 bg-white'
                       }`}
                     >
                       <span className="flex items-center gap-2">
-                        <span>{sort.emoji}</span>
-                        <span className="font-medium text-gray-900">{sort.name}</span>
+                        <span>{filter.emoji}</span>
+                        <span className="font-medium text-gray-900">{filter.name}</span>
                       </span>
-                      {selectedSort === sort.id && <Check className="w-5 h-5 text-purple-600" />}
+                      {activeFilters.includes(filter.id) && <Check className="w-5 h-5 text-purple-600" />}
                     </button>
                   ))}
                 </div>

@@ -6,12 +6,13 @@ import { useAppStore } from '@/lib/store'
 const tabs = [
   { id: 'Home', emoji: '🏠', href: '/' },
   { id: 'Jobs', emoji: '💼', href: '/browse?category=Jobs' },
-  { id: 'Rooms', emoji: '🏘️', href: '/browse?category=Property' },
-  { id: 'Ads', emoji: '📋', href: '/browse' },
-  { id: 'Wanted', emoji: '🤝', href: '/wanted' },
-  { id: 'Groups', emoji: '🌍', href: '/groups' },
+  { id: 'Rooms', emoji: '🏠', href: '/browse?category=Rooms' },
+  { id: 'Cars', emoji: '🚗', href: '/browse?category=Cars' },
+  { id: 'Services', emoji: '🛠', href: '/browse?category=Services' },
+  { id: 'Buy & Sell', emoji: '🛒', href: '/browse?category=Buy & Sell' },
+  { id: 'Community', emoji: '👥', href: '/browse?category=Community' },
   { id: 'Fun', emoji: '🎮', href: '/fun' },
-  { id: '+ Post', emoji: '', href: '/post' }
+  { id: 'More', emoji: '☰', href: '/more' }
 ]
 
 interface TopTabsProps {
@@ -35,13 +36,15 @@ export function TopTabs({ onTabChange }: TopTabsProps) {
     if (pathname === '/browse') {
       const category = searchParams.get('category')
       if (category === 'Jobs') return 'Jobs'
-      if (category === 'Property') return 'Rooms'
-      return 'Ads'
+      if (category === 'Rooms') return 'Rooms'
+      if (category === 'Cars') return 'Cars'
+      if (category === 'Services') return 'Services'
+      if (category === 'Buy & Sell') return 'Buy & Sell'
+      if (category === 'Community') return 'Community'
+      return 'Home'
     }
-    if (pathname === '/wanted') return 'Wanted'
-    if (pathname === '/groups') return 'Groups'
     if (pathname === '/fun') return 'Fun'
-    if (pathname === '/post') return '+ Post'
+    if (pathname === '/more') return 'More'
     return currentTab
   }
 
@@ -52,18 +55,14 @@ export function TopTabs({ onTabChange }: TopTabsProps) {
       <div className="flex overflow-x-auto hide-scrollbar px-2 py-2 gap-1">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
-          const isPostTab = tab.id === '+ Post'
-          
           return (
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap text-sm font-medium transition-all ${
-                isPostTab
-                  ? 'bg-purple-600 text-white'
-                  : isActive
-                    ? 'bg-purple-100/80 text-purple-700 backdrop-blur-sm border border-purple-200/50'
-                    : 'text-gray-600 hover:bg-gray-100'
+                isActive
+                  ? 'bg-purple-100/80 text-purple-700 backdrop-blur-sm border border-purple-200/50'
+                  : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               {tab.emoji && <span>{tab.emoji}</span>}
