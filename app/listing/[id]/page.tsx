@@ -2,11 +2,17 @@
 
 import { use, useState } from 'react'
 import { useRouter } from 'next/navigation'
+
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return []; 
+}
+
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
 import { useAppStore } from '@/lib/store'
 import { ArrowLeft, Heart, Share2, X, Check, MapPin, Eye, Clock, MessageCircle, Phone } from 'lucide-react'
-
 export default function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
