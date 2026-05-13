@@ -290,8 +290,3 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     </div>
   )
 }
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return []; 
-}
