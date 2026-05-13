@@ -661,61 +661,39 @@ export const useAppStore = create<AppState>()(
   )
 )
 
-// Main categories as per Dubai market structure
 export const categories = [
-  { id: 'jobs', name: 'Jobs', emoji: '💼', subcategories: ['All', 'Driver', 'Labour', 'Delivery', 'Admin', 'Sales', 'IT', 'Restaurant', 'Construction', 'Security', 'Cleaner', 'Hotel', 'Part Time', 'Other'] },
-  { id: 'rooms', name: 'Rooms', emoji: '🏠', subcategories: ['All', 'Bed Space', 'Partition', 'Family Room', 'Studio', '1 BHK', '2 BHK', 'Villa', 'Sharing', 'Monthly', 'Near Metro', 'Other'] },
-  { id: 'cars', name: 'Cars', emoji: '🚗', subcategories: ['All', 'Used Cars', 'SUV', 'Sedan', 'Luxury', 'Sports', 'Bike', 'Electric', 'Commercial', 'Accessories', 'Number Plate', 'Other'] },
-  { id: 'services', name: 'Services', emoji: '🛠', subcategories: ['All', 'Cleaning', 'AC Repair', 'Beauty', 'Tuition', 'Movers', 'Digital', 'Repair', 'Visa', 'Photography', 'Events', 'Other'] },
-  { id: 'buysell', name: 'Buy & Sell', emoji: '🛒', subcategories: ['All', 'Mobiles', 'Furniture', 'Electronics', 'Fashion', 'Gaming', 'Appliances', 'Baby Items', 'Books', 'Sports', 'Pets', 'Other'] },
-  { id: 'community', name: 'Community', emoji: '👥', subcategories: ['All', 'Events', 'Meetups', 'Travel', 'Classes', 'Cricket', 'Food', 'Business', 'Local Groups', 'Volunteers', 'Other'] },
-  { id: 'fun', name: 'Fun', emoji: '🎮', subcategories: ['All', 'Candy Game', 'Puzzle', 'Memory Match', 'Spin Wheel', 'Quiz', 'Arcade', 'Leaderboard', 'Daily Rewards', 'Lucky Draw'] }
+  { id: 'vehicles', name: 'Vehicles', emoji: '🚗', subcategories: ['Cars', 'Motorcycles', 'Trucks', 'Boats', 'Parts'] },
+  { id: 'property', name: 'Property', emoji: '🏠', subcategories: ['Apartments', 'Villas', 'Rooms', 'Commercial', 'Land'] },
+  { id: 'jobs', name: 'Jobs', emoji: '💼', subcategories: ['Full-time', 'Part-time', 'Remote', 'Freelance', 'Internship'] },
+  { id: 'labour', name: 'Labour', emoji: '👷', subcategories: ['Electrician', 'Plumber', 'Painter', 'AC Tech', 'Driver', 'Cleaner'] },
+  { id: 'electronics', name: 'Electronics', emoji: '📱', subcategories: ['Phones', 'Laptops', 'TVs', 'Cameras', 'Gaming', 'Accessories'] },
+  { id: 'furniture', name: 'Furniture', emoji: '🛋️', subcategories: ['Sofas', 'Beds', 'Tables', 'Chairs', 'Storage', 'Outdoor'] },
+  { id: 'farmland', name: 'Farmland', emoji: '🌾', subcategories: ['Land', 'Equipment', 'Seeds', 'Livestock', 'Produce'] },
+  { id: 'more', name: 'More...', emoji: '📦', subcategories: ['Fashion', 'Sports', 'Books', 'Toys', 'Art', 'Other'] }
 ]
 
-// Smart filter chips
-export const smartFilters = [
-  { id: 'newest', name: 'Newest', emoji: '🕒' },
-  { id: 'urgent', name: 'Urgent', emoji: '🔥' },
-  { id: 'featured', name: 'Featured', emoji: '⭐' },
-  { id: 'verified', name: 'Verified', emoji: '✔' },
-  { id: 'nearme', name: 'Near Me', emoji: '📍' },
-  { id: 'withphotos', name: 'With Photos', emoji: '📷' },
-  { id: 'price', name: 'Price', emoji: '💰' },
-  { id: 'today', name: 'Today', emoji: '📅' },
-  { id: 'boosted', name: 'Boosted', emoji: '🚀' },
-  { id: 'popular', name: 'Popular', emoji: '🎯' }
-]
-
-// UAE Location chips
-export const uaeLocationChips = [
-  { id: 'dubai', name: 'Dubai', flag: '🇦🇪' },
-  { id: 'abudhabi', name: 'Abu Dhabi', flag: '🇦🇪' },
-  { id: 'sharjah', name: 'Sharjah', flag: '🇦🇪' },
-  { id: 'ajman', name: 'Ajman', flag: '🇦🇪' },
-  { id: 'alain', name: 'Al Ain', flag: '🇦🇪' }
-]
-
-// Category-specific specifications for dynamic post forms
+// Category-specific specifications
 export const categorySpecs: Record<string, string[]> = {
-  'Jobs': ['Job Type', 'License Required', 'UAE Experience', 'Salary', 'Working Hours', 'Benefits', 'Visa Provided'],
-  'Rooms': ['Furnished', 'Metro Distance', 'Persons Allowed', 'Deposit', 'Available From', 'Bills Included'],
-  'Cars': ['KM', 'Brand', 'Model', 'Year', 'Fuel Type', 'Color', 'Transmission', 'Insurance'],
-  'Services': ['Experience', 'Availability', 'Service Area', 'Pricing Type', 'Languages'],
-  'Buy & Sell': ['Condition', 'Brand', 'Age', 'Warranty', 'Original Price'],
-  'Community': ['Event Date', 'Location', 'Entry Fee', 'Age Group', 'Language']
+  'Vehicles': ['Year', 'KM', 'Color', 'Doors', 'Seats', 'Engine', 'Transmission', 'Fuel Type', 'Body Type'],
+  'Property': ['Bedrooms', 'Bathrooms', 'Size', 'Furnished', 'Parking', 'View', 'Floor', 'Building Age'],
+  'Jobs': ['Type', 'Experience Required', 'Salary Range', 'Working Hours', 'Benefits', 'Visa Provided'],
+  'Labour': ['Experience', 'Skills', 'Availability', 'Languages', 'Certifications'],
+  'Electronics': ['Brand', 'Model', 'Storage', 'Color', 'Warranty', 'Condition', 'Accessories'],
+  'Furniture': ['Material', 'Color', 'Dimensions', 'Condition', 'Assembly Required', 'Brand'],
+  'Farmland': ['Size', 'Water Supply', 'Soil Type', 'Fencing', 'Electricity', 'Road Access'],
+  'More': ['Condition', 'Brand', 'Size', 'Color', 'Material']
 }
 
-// Main menu tabs
 export const topTabs = [
   { id: 'home', name: 'Home', emoji: '🏠' },
   { id: 'jobs', name: 'Jobs', emoji: '💼' },
-  { id: 'rooms', name: 'Rooms', emoji: '🏠' },
-  { id: 'cars', name: 'Cars', emoji: '🚗' },
-  { id: 'services', name: 'Services', emoji: '🛠' },
-  { id: 'buysell', name: 'Buy & Sell', emoji: '🛒' },
-  { id: 'community', name: 'Community', emoji: '👥' },
+  { id: 'rooms', name: 'Rooms', emoji: '🏘️' },
+  { id: 'ads', name: 'Ads', emoji: '📋' },
+  { id: 'reels', name: 'Reels', emoji: '🎬' },
+  { id: 'wanted', name: 'Wanted', emoji: '🤝' },
+  { id: 'groups', name: 'Groups', emoji: '🌍' },
   { id: 'fun', name: 'Fun', emoji: '🎮' },
-  { id: 'more', name: 'More', emoji: '☰' }
+  { id: 'post', name: '+ Post', emoji: '' }
 ]
 
 // Country filters for communities

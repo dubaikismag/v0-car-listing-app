@@ -271,11 +271,11 @@ export default function FunPage() {
   }
 
   return (
-  <div className="min-h-screen bg-[#f5f3ff] pb-20">
-  <Header />
-  <TopTabs onTabChange={(tab) => {
-  if (tab === 'Fun') return
-  }} />
+    <div className="min-h-screen bg-[#f5f3ff] pb-20">
+      <Header />
+      <TopTabs onTabChange={(tab) => {
+        if (tab === 'Fun') return
+      }} />
 
       <main className="px-4 py-4">
         {/* Fun Zone Header */}
@@ -939,8 +939,8 @@ export default function FunPage() {
         </div>
       )}
 
-  <BottomNavigation />
-  <AuthModal />
-  </div>
+      <BottomNavigation />
+      <AuthModal />
+    </div>
   )
-  }
+}
