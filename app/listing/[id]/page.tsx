@@ -290,3 +290,6 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
     </div>
   )
 }
+export function generateStaticParams() {
+  return [{ id: '1' }, { id: '2' }, { id: '3' }]
+}
