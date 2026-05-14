@@ -6,12 +6,13 @@ import { useAppStore } from '@/lib/store'
 const tabs = [
   { id: 'Home', emoji: '🏠', href: '/' },
   { id: 'Jobs', emoji: '💼', href: '/browse?category=Jobs' },
-  { id: 'Rooms', emoji: '🏘️', href: '/browse?category=Property' },
-  { id: 'Ads', emoji: '📋', href: '/browse' },
-  { id: 'Wanted', emoji: '🤝', href: '/wanted' },
-  { id: 'Groups', emoji: '🌍', href: '/groups' },
+  { id: 'Rooms', emoji: '🏠', href: '/browse?category=Rooms' },
+  { id: 'Cars', emoji: '🚗', href: '/browse?category=Cars' },
+  { id: 'Services', emoji: '🛠', href: '/browse?category=Services' },
+  { id: 'Buy & Sell', emoji: '🛒', href: '/browse?category=Buy & Sell' },
+  { id: 'Wanted', emoji: '❤️', href: '/browse?category=Wanted' },
+  { id: 'Community', emoji: '👥', href: '/browse?category=Community' },
   { id: 'Fun', emoji: '🎮', href: '/fun' },
-  { id: '+ Post', emoji: '', href: '/post' }
 ]
 
 interface TopTabsProps {
@@ -35,13 +36,15 @@ export function TopTabs({ onTabChange }: TopTabsProps) {
     if (pathname === '/browse') {
       const category = searchParams.get('category')
       if (category === 'Jobs') return 'Jobs'
-      if (category === 'Property') return 'Rooms'
-      return 'Ads'
+      if (category === 'Rooms') return 'Rooms'
+      if (category === 'Cars') return 'Cars'
+      if (category === 'Services') return 'Services'
+      if (category === 'Buy & Sell') return 'Buy & Sell'
+      if (category === 'Wanted') return 'Wanted'
+      if (category === 'Community') return 'Community'
+      return 'Home'
     }
-    if (pathname === '/wanted') return 'Wanted'
-    if (pathname === '/groups') return 'Groups'
     if (pathname === '/fun') return 'Fun'
-    if (pathname === '/post') return '+ Post'
     return currentTab
   }
 
