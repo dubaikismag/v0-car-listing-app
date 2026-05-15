@@ -4,13 +4,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Add these two sections to ignore common small errors:
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
 };
 
-export default nextConfig; 
+export default nextConfig;
