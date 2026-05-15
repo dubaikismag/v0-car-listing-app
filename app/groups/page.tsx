@@ -2,206 +2,104 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, Suspense } from 'react'
+import { Suspense } from 'react'
 import { Header } from '@/components/header'
-import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
-import { AuthModal } from '@/components/auth-modal'
-import { useAppStore, countryFilters } from '@/lib/store'
-import { X, ArrowLeft, Users } from 'lucide-react'
+import { useAppStore } from '@/lib/store'
+import { 
+  User, 
+  Settings, 
+  HelpCircle, 
+  Shield, 
+  LogOut, 
+  ChevronRight, 
+  Bell, 
+  Moon,
+  Car
+} from 'lucide-react'
 
-// 1. This is the main entry point that wraps everything in Suspense to prevent the build error
-export default function GroupsPage() {
+// 1. Main Entry Point with Suspense Fix
+export default function MorePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#f5f3ff] flex items-center justify-center">
-        <p className="text-purple-600 font-medium">Loading communities...</p>
+        <p className="text-purple-600 font-medium">Loading settings...</p>
       </div>
     }>
-      <GroupsContent />
+      <MoreContent />
     </Suspense>
   )
 }
 
-// 2. This function contains all your original logic
-function GroupsContent() {
+// 2. The actual Page Content
+function MoreContent() {
   const store = useAppStore()
+  const user = store?.user
+  const logout = store?.logout || (() => {})
 
-  const [selectedCountry, setSelectedCountry] = useState('all')
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showPendingModal, setShowPendingModal] = useState(false)
-  const [newGroup, setNewGroup] = useState({
-    name: '',
-    country: 'India',
-    flag: '🇮🇳',
-    activity: ''
-  })
-
-  // SAFE STORE ACCESS
-  const communityGroups = store?.communityGroups || []
-  const joinGroup = store?.joinGroup || (() => {})
-  const requestCommunity = store?.requestCommunity || (() => {})
-  const isAuthenticated = store?.isAuthenticated || false
-  const setShowAuthModal = store?.setShowAuthModal || (() => {})
-  const pendingCommunities = store?.pendingCommunities || []
-  const isAdmin = store?.isAdmin || (() => false)
-  const approveCommunity = store?.approveCommunity || (() => {})
-
-  const countryList = countryFilters || []
-
-  const filteredGroups = communityGroups.filter(g =>
-    selectedCountry === 'all' || g.country?.toLowerCase() === selectedCountry
-  )
-
-  const handleCreateGroup = () => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true)
-      return
-    }
-
-    if (!newGroup.name.trim() || !newGroup.activity.trim()) {
-      alert('Please fill in all fields')
-      return
-    }
-
-    requestCommunity({
-      name: newGroup.name,
-      members: 1,
-      activity: newGroup.activity,
-      country: newGroup.country,
-      flag: newGroup.flag,
-      joined: true
-    })
-
-    setShowCreateModal(false)
-    setNewGroup({ name: '', country: 'India', flag: '🇮🇳', activity: '' })
-    alert('Your community request has been submitted for admin approval!')
-  }
+  const menuItems = [
+    { icon: <User className="w-5 h-5" />, label: 'My Profile', color: 'text-blue-600' },
+    { icon: <Car className="w-5 h-5" />, label: 'My Listings', color: 'text-green-600' },
+    { icon: <Bell className="w-5 h-5" />, label: 'Notifications', color: 'text-amber-600' },
+    { icon: <Moon className="w-5 h-5" />, label: 'Dark Mode', color: 'text-purple-600', isToggle: true },
+    { icon: <Settings className="w-5 h-5" />, label: 'Settings', color: 'text-gray-600' },
+    { icon: <HelpCircle className="w-5 h-5" />, label: 'Help & Support', color: 'text-indigo-600' },
+    { icon: <Shield className="w-5 h-5" />, label: 'Privacy Policy', color: 'text-teal-600' },
+  ]
 
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-20">
       <Header />
-      <TopTabs />
+      
+      <main className="px-4 py-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">More</h1>
 
-      <main className="px-4 py-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span>🌍</span> Community Groups
-          </h2>
-
-          <div className="flex items-center gap-2">
-            {isAdmin() && pendingCommunities.length > 0 && (
-              <button
-                onClick={() => setShowPendingModal(true)}
-                className="text-amber-600 font-semibold text-sm flex items-center gap-1"
-              >
-                ⏳ {pendingCommunities.length} Pending
-              </button>
-            )}
-
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="text-purple-600 font-semibold text-sm"
-            >
-              + Create
-            </button>
+        {/* User Profile Card */}
+        <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm border border-purple-100 flex items-center gap-4">
+          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-xl">
+            {user?.name?.[0] || 'G'}
+          </div>
+          <div>
+            <h2 className="font-bold text-lg text-gray-900">{user?.name || 'Guest User'}</h2>
+            <p className="text-gray-500 text-sm">{user?.email || 'Sign in to manage your account'}</p>
           </div>
         </div>
 
-        <p className="text-gray-500 text-sm mb-4">
-          Connect with your community - share jobs, find help, chat free
-        </p>
-
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
-          {countryList.map((country) => (
-            <button
-              key={country.id}
-              onClick={() => setSelectedCountry(country.id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                selectedCountry === country.id
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white border border-gray-200 text-gray-700'
+        {/* Settings Menu */}
+        <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden mb-6">
+          {menuItems.map((item, index) => (
+            <button 
+              key={index}
+              className={`w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${
+                index !== menuItems.length - 1 ? 'border-b border-gray-100' : ''
               }`}
             >
-              <span>{country.flag}</span>
-              <span>{country.name}</span>
+              <div className="flex items-center gap-3">
+                <div className={`${item.color}`}>{item.icon}</div>
+                <span className="font-medium text-gray-700">{item.label}</span>
+              </div>
+              {item.isToggle ? (
+                <div className="w-10 h-5 bg-gray-200 rounded-full relative">
+                  <div className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full"></div>
+                </div>
+              ) : (
+                <ChevronRight className="w-5 h-5 text-gray-300" />
+              )}
             </button>
           ))}
         </div>
 
-        <p className="text-gray-400 text-sm mb-3">
-          {filteredGroups.length} communities found
-        </p>
-
-        <div className="space-y-3">
-          {filteredGroups.map((group) => (
-            <div key={group.id} className="bg-white rounded-xl p-4 border flex items-center gap-4">
-              <div className="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center">
-                <span className="text-3xl">{group.flag}</span>
-              </div>
-
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900">{group.name}</h3>
-                <p className="text-gray-500 text-sm flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  {group.members} members - {group.activity}
-                </p>
-              </div>
-
-              <button
-                onClick={() => joinGroup(group.id)}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm ${
-                  group.joined
-                    ? 'bg-purple-100 text-purple-600'
-                    : 'bg-purple-600 text-white'
-                }`}
-              >
-                {group.joined ? 'Joined' : 'Join'}
-              </button>
-            </div>
-          ))}
-        </div>
+        {/* Logout Button */}
+        <button 
+          onClick={logout}
+          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-red-100 flex items-center justify-center gap-2 text-red-600 font-bold hover:bg-red-50 transition-colors"
+        >
+          <LogOut className="w-5 h-5" />
+          Logout
+        </button>
       </main>
 
       <BottomNavigation />
-      <AuthModal />
-
-      {showCreateModal && (
-        <div className="fixed inset-0 z-[100] bg-black/50 flex items-end">
-          <div className="w-full bg-white rounded-t-3xl p-5">
-            <div className="flex justify-between mb-3">
-              <button onClick={() => setShowCreateModal(false)}>
-                <ArrowLeft />
-              </button>
-              <h2 className="font-bold">Create Community</h2>
-              <button onClick={() => setShowCreateModal(false)}>
-                <X />
-              </button>
-            </div>
-
-            <input
-              className="w-full p-3 border rounded mb-3 text-black"
-              placeholder="Community Name"
-              value={newGroup.name}
-              onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
-            />
-
-            <input
-              className="w-full p-3 border rounded mb-3 text-black"
-              placeholder="Activity"
-              value={newGroup.activity}
-              onChange={(e) => setNewGroup({ ...newGroup, activity: e.target.value })}
-            />
-
-            <button
-              onClick={handleCreateGroup}
-              className="w-full bg-purple-600 text-white py-3 rounded font-bold"
-            >
-              Submit
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
