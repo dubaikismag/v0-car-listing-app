@@ -18,7 +18,7 @@ import {
   Car
 } from 'lucide-react'
 
-// 1. Main Entry Point with Suspense Fix
+// 1. This main entry point wraps everything in Suspense to fix the build error
 export default function MorePage() {
   return (
     <Suspense fallback={
@@ -31,7 +31,7 @@ export default function MorePage() {
   )
 }
 
-// 2. The actual Page Content
+// 2. This function contains your original UI logic
 function MoreContent() {
   const store = useAppStore()
   const user = store?.user
