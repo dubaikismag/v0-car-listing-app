@@ -1,6 +1,8 @@
 'use client'
+
 export const dynamic = 'force-dynamic'
-import { useState } from 'react'
+
+import { useState, Suspense } from 'react'
 import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
@@ -8,7 +10,21 @@ import { AuthModal } from '@/components/auth-modal'
 import { useAppStore, countryFilters } from '@/lib/store'
 import { X, ArrowLeft, Users } from 'lucide-react'
 
+// 1. This is the main entry point that wraps everything in Suspense to prevent the build error
 export default function GroupsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f5f3ff] flex items-center justify-center">
+        <p className="text-purple-600 font-medium">Loading communities...</p>
+      </div>
+    }>
+      <GroupsContent />
+    </Suspense>
+  )
+}
+
+// 2. This function contains all your original logic
+function GroupsContent() {
   const store = useAppStore()
 
   const [selectedCountry, setSelectedCountry] = useState('all')
@@ -21,7 +37,7 @@ export default function GroupsPage() {
     activity: ''
   })
 
-  // SAFE STORE ACCESS (prevents build crash)
+  // SAFE STORE ACCESS
   const communityGroups = store?.communityGroups || []
   const joinGroup = store?.joinGroup || (() => {})
   const requestCommunity = store?.requestCommunity || (() => {})
@@ -62,25 +78,12 @@ export default function GroupsPage() {
     alert('Your community request has been submitted for admin approval!')
   }
 
-  const handleCountryChange = (countryId) => {
-    const country = countryList.find(c => c.id === countryId)
-    if (country) {
-      setNewGroup(prev => ({
-        ...prev,
-        country: country.name,
-        flag: country.flag
-      }))
-    }
-  }
-
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-20">
       <Header />
       <TopTabs />
 
       <main className="px-4 py-4">
-
-        {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <span>🌍</span> Community Groups
@@ -109,7 +112,6 @@ export default function GroupsPage() {
           Connect with your community - share jobs, find help, chat free
         </p>
 
-        {/* Country Filters */}
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
           {countryList.map((country) => (
             <button
@@ -131,7 +133,6 @@ export default function GroupsPage() {
           {filteredGroups.length} communities found
         </p>
 
-        {/* Groups */}
         <div className="space-y-3">
           {filteredGroups.map((group) => (
             <div key={group.id} className="bg-white rounded-xl p-4 border flex items-center gap-4">
@@ -165,12 +166,9 @@ export default function GroupsPage() {
       <BottomNavigation />
       <AuthModal />
 
-      {/* MODALS (unchanged UI logic kept safe) */}
-
       {showCreateModal && (
         <div className="fixed inset-0 z-[100] bg-black/50 flex items-end">
           <div className="w-full bg-white rounded-t-3xl p-5">
-
             <div className="flex justify-between mb-3">
               <button onClick={() => setShowCreateModal(false)}>
                 <ArrowLeft />
@@ -182,14 +180,14 @@ export default function GroupsPage() {
             </div>
 
             <input
-              className="w-full p-3 border rounded mb-3"
+              className="w-full p-3 border rounded mb-3 text-black"
               placeholder="Community Name"
               value={newGroup.name}
               onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
             />
 
             <input
-              className="w-full p-3 border rounded mb-3"
+              className="w-full p-3 border rounded mb-3 text-black"
               placeholder="Activity"
               value={newGroup.activity}
               onChange={(e) => setNewGroup({ ...newGroup, activity: e.target.value })}
@@ -197,7 +195,7 @@ export default function GroupsPage() {
 
             <button
               onClick={handleCreateGroup}
-              className="w-full bg-purple-600 text-white py-3 rounded"
+              className="w-full bg-purple-600 text-white py-3 rounded font-bold"
             >
               Submit
             </button>
