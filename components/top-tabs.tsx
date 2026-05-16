@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 
@@ -19,7 +20,7 @@ interface TopTabsProps {
   onTabChange?: (tab: string) => void
 }
 
-export function TopTabs({ onTabChange }: TopTabsProps) {
+function TopTabsContent({ onTabChange }: TopTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -76,5 +77,24 @@ export function TopTabs({ onTabChange }: TopTabsProps) {
         })}
       </div>
     </div>
+  )
+}
+
+export function TopTabs({ onTabChange }: TopTabsProps) {
+  return (
+    <Suspense fallback={
+      <div className="bg-white border-b border-gray-100 sticky top-[116px] z-40 shadow-sm">
+        <div className="flex overflow-x-auto hide-scrollbar px-2 py-2 gap-1">
+          {tabs.map((tab) => (
+            <div key={tab.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap text-sm font-medium text-gray-400">
+              {tab.emoji && <span>{tab.emoji}</span>}
+              <span>{tab.id}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    }>
+      <TopTabsContent onTabChange={onTabChange} />
+    </Suspense>
   )
 }
