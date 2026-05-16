@@ -167,11 +167,6 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
               ⭐
             </span>
           )}
-          {listing.badge && (
-            <span className={`absolute ${isPremium ? 'top-2 left-8' : 'top-2 left-2'} px-2 py-0.5 rounded text-[10px] font-bold ${badgeColors[listing.badge]} ${isPremium ? 'premium-badge' : ''}`}>
-              {listing.badge}
-            </span>
-          )}
           {/* Tag/Bookmark Icon - matching reference design */}
           <button
             onClick={handleSave}
@@ -179,7 +174,15 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
           >
             <TagIcon saved={isSaved} />
           </button>
-          <span className="text-5xl">{listing.emoji}</span>
+          {/* Emoji with Badge centered together */}
+          <div className="flex items-center justify-center gap-1">
+            {listing.badge && (
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badgeColors[listing.badge]} ${isPremium ? 'premium-badge' : ''}`}>
+                {listing.badge}
+              </span>
+            )}
+            <span className="text-5xl">{listing.emoji}</span>
+          </div>
         </div>
         
         {/* Content - Flex grow */}
