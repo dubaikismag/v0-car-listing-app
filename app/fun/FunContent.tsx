@@ -1,8 +1,20 @@
-import { Suspense } from 'react'
-import FunContent from './FunContent' // Move your current logic here
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Header } from '@/components/header'
+import { TopTabs } from '@/components/top-tabs'
+import { BottomNavigation } from '@/components/bottom-navigation'
+import { AuthModal } from '@/components/auth-modal'
+import { useAppStore } from '@/lib/store'
+import { X, ArrowLeft } from 'lucide-react'
+
+interface FarmPlot {
+  id: number
+  state: 'empty' | 'planted' | 'growing' | 'ready'
+  progress: number
+}
 
 export default function FunPage() {
-
   const { coins, dailyCheckedIn, claimDaily, addCoins } = useAppStore()
   const [activeGame, setActiveGame] = useState<string | null>(null)
   const [isSpinning, setIsSpinning] = useState(false)
@@ -47,10 +59,7 @@ export default function FunPage() {
   ])
   const [waterTank, setWaterTank] = useState(70)
 
-  // Prizes array - index 0 starts at top of wheel when rotation is 0
-  // Each segment is 60 degrees (360/6)
-  const prizes = ['20 Coins', 'AED 50', '5 Coins', 'Spin Again!', 'AED 10', 'Free Boost']
-  const segmentAngle = 360 / prizes.length // 60 degrees
+  const prizes = ['5 Coins', 'Spin Again!', 'AED 10', 'Free Boost', '20 Coins', 'AED 50']
   
   const quizQuestions = [
     { q: 'What is the capital of UAE?', options: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman'], correct: 1 },
@@ -94,29 +103,17 @@ export default function FunPage() {
     setIsSpinning(true)
     setSpinResult(null)
     
-    // Pick a random prize index
-    const winningIndex = Math.floor(Math.random() * prizes.length)
+    const randomIndex = Math.floor(Math.random() * prizes.length)
+    const segmentAngle = 360 / prizes.length
+    const targetAngle = 360 * 5 + (randomIndex * segmentAngle) + (segmentAngle / 2)
     
-    // The wheel rotates clockwise. Pointer is fixed at top (12 o'clock).
-    // When wheel rotation is 0, segment 0 (20 Coins) is at top.
-    // To make segment N land at top, we need to rotate the wheel so segment N is under pointer.
-    // Since segment N starts at N*60 degrees from top (clockwise),
-    // we need to rotate 360 - (N*60) + offset to center the segment under pointer.
-    
-    const baseSpins = 360 * 5 // 5 full rotations for dramatic effect
-    const segmentStart = winningIndex * segmentAngle
-    const segmentCenter = segmentStart + (segmentAngle / 2)
-    // Rotate wheel so this segment's center lands at top (360 - segmentCenter)
-    const stopAngle = 360 - segmentCenter
-    const totalRotation = baseSpins + stopAngle
-    
-    setSpinRotation(prev => prev + totalRotation)
+    setSpinRotation(prev => prev + targetAngle)
     
     setTimeout(() => {
-      setSpinResult(prizes[winningIndex])
+      setSpinResult(prizes[randomIndex])
       setIsSpinning(false)
-      if (prizes[winningIndex].includes('Coins')) {
-        const coinAmount = parseInt(prizes[winningIndex])
+      if (prizes[randomIndex].includes('Coins')) {
+        const coinAmount = parseInt(prizes[randomIndex])
         addCoins(coinAmount)
       }
     }, 4000)
@@ -427,76 +424,49 @@ export default function FunPage() {
               </div>
               
               <div className="relative flex justify-center mb-6">
-                {/* Pointer at top - pointing down at wheel */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
                   <div className="w-0 h-0 border-l-[15px] border-r-[15px] border-t-[25px] border-l-transparent border-r-transparent border-t-purple-700 drop-shadow-lg"></div>
                 </div>
                 
-                {/* Wheel with SVG for precise segment labels */}
                 <div 
-                  className="w-64 h-64 relative"
+                  className="w-64 h-64 rounded-full border-8 border-purple-200 relative overflow-hidden shadow-xl"
                   style={{ 
                     transform: `rotate(${spinRotation}deg)`,
                     transition: isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
+                    background: `conic-gradient(
+                      #f59e0b 0deg 60deg, 
+                      #8b5cf6 60deg 120deg, 
+                      #10b981 120deg 180deg, 
+                      #ef4444 180deg 240deg, 
+                      #3b82f6 240deg 300deg, 
+                      #ec4899 300deg 360deg
+                    )`
                   }}
                 >
-                  <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-xl">
-                    {/* Wheel segments */}
-                    {prizes.map((prize, i) => {
-                      const startAngle = i * 60 - 90 // Start from top (-90deg)
-                      const endAngle = startAngle + 60
-                      const startRad = (startAngle * Math.PI) / 180
-                      const endRad = (endAngle * Math.PI) / 180
-                      const x1 = 100 + 92 * Math.cos(startRad)
-                      const y1 = 100 + 92 * Math.sin(startRad)
-                      const x2 = 100 + 92 * Math.cos(endRad)
-                      const y2 = 100 + 92 * Math.sin(endRad)
-                      const colors = ['#3b82f6', '#ec4899', '#f59e0b', '#eab308', '#10b981', '#ef4444']
-                      return (
-                        <path
-                          key={i}
-                          d={`M 100 100 L ${x1} ${y1} A 92 92 0 0 1 ${x2} ${y2} Z`}
-                          fill={colors[i]}
-                          stroke="#e9d5ff"
-                          strokeWidth="3"
-                        />
-                      )
-                    })}
-                    
-                    {/* Prize labels - text along radius, reading outward */}
-                    {prizes.map((prize, i) => {
-                      const midAngle = i * 60 - 90 + 30 // Center of segment
-                      const midRad = (midAngle * Math.PI) / 180
-                      const textRadius = 62
-                      const tx = 100 + textRadius * Math.cos(midRad)
-                      const ty = 100 + textRadius * Math.sin(midRad)
-                      // Rotate text to be readable (pointing outward from center)
-                      const textRotation = midAngle + 90
-                      return (
-                        <text
-                          key={i}
-                          x={tx}
-                          y={ty}
-                          fill="white"
-                          fontSize="9"
-                          fontWeight="bold"
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          transform={`rotate(${textRotation}, ${tx}, ${ty})`}
-                        >
-                          {prize}
-                        </text>
-                      )
-                    })}
-                    
-                    {/* Center circle */}
-                    <circle cx="100" cy="100" r="22" fill="white" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))" />
-                  </svg>
-                  
-                  {/* Center gift icon */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl">
-                    🎁
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white shadow-lg z-10 flex items-center justify-center">
+                    <span className="text-2xl">🎁</span>
                   </div>
+                  
+                  {prizes.map((prize, i) => {
+                    const angle = (360 / prizes.length) * i + 30
+                    const radian = (angle - 90) * (Math.PI / 180)
+                    const radius = 90
+                    const x = Math.cos(radian) * radius
+                    const y = Math.sin(radian) * radius
+                    return (
+                      <div
+                        key={i}
+                        className="absolute text-white text-[10px] font-bold text-center w-16"
+                        style={{
+                          top: `calc(50% + ${y}px)`,
+                          left: `calc(50% + ${x}px)`,
+                          transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+                        }}
+                      >
+                        {prize}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -731,15 +701,9 @@ export default function FunPage() {
               Clear
             </button>
             
-            {wordLetters.length === 0 && guessedWord.length > 0 && (
+            {wordLetters.length === 0 && (
               <div className="mt-4 p-3 bg-green-50 rounded-xl text-center">
                 <p className="font-bold text-green-700">Correct! +15 Coins</p>
-                <button 
-                  onClick={() => { addCoins(15); initWordPuzzle() }}
-                  className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium"
-                >
-                  Play Again
-                </button>
               </div>
             )}
           </div>
@@ -930,10 +894,5 @@ export default function FunPage() {
       <BottomNavigation />
       <AuthModal />
     </div>
-
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <FunContent />
-    </Suspense>
   )
 }
