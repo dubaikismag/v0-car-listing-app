@@ -930,7 +930,10 @@ export default function FunPage() {
       <BottomNavigation />
       <AuthModal />
     </div>
+  )
+}
 
+export default function FunPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <FunContent />
