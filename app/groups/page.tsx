@@ -1,100 +1,139 @@
 'use client'
 
-import { Suspense } from 'react'
+export const dynamic = 'force-dynamic'
+
+import { useState, Suspense } from 'react'
 import { Header } from '@/components/header'
+import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { useAppStore } from '@/lib/store'
-import { 
-  User, 
-  Settings, 
-  HelpCircle, 
-  Shield, 
-  LogOut, 
-  ChevronRight, 
-  Bell, 
-  Moon,
-  Car
-} from 'lucide-react'
+import { Gamepad2, Trophy, Users, Zap, Play, Star } from 'lucide-react'
 
-// 1. This main entry point wraps everything in Suspense to fix the build error
-export default function MorePage() {
+// 1. Clean Main Entry Point with Suspense Boundary Fix
+export default function FunPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#f5f3ff] flex items-center justify-center">
-        <p className="text-purple-600 font-medium">Loading settings...</p>
+        <p className="text-purple-600 font-medium">Loading fun zone...</p>
       </div>
     }>
-      <MoreContent />
+      <FunContent />
     </Suspense>
   )
 }
 
-// 2. This function contains your original UI logic
-function MoreContent() {
+// 2. The Actual Page Component Logic
+function FunContent() {
   const store = useAppStore()
+  const isAuthenticated = store?.isAuthenticated || false
   const user = store?.user
-  const logout = store?.logout || (() => {})
 
-  const menuItems = [
-    { icon: <User className="w-5 h-5" />, label: 'My Profile', color: 'text-blue-600' },
-    { icon: <Car className="w-5 h-5" />, label: 'My Listings', color: 'text-green-600' },
-    { icon: <Bell className="w-5 h-5" />, label: 'Notifications', color: 'text-amber-600' },
-    { icon: <Moon className="w-5 h-5" />, label: 'Dark Mode', color: 'text-purple-600', isToggle: true },
-    { icon: <Settings className="w-5 h-5" />, label: 'Settings', color: 'text-gray-600' },
-    { icon: <HelpCircle className="w-5 h-5" />, label: 'Help & Support', color: 'text-indigo-600' },
-    { icon: <Shield className="w-5 h-5" />, label: 'Privacy Policy', color: 'text-teal-600' },
+  // Sample static game items matching your clean mobile-app style layout
+  const games = [
+    {
+      id: 'g1',
+      title: 'Spin & Win',
+      description: 'Spin the daily wheel to win points and active tokens.',
+      icon: '🎡',
+      category: 'Luck',
+      plays: '14.2k',
+      rating: 4.8
+    },
+    {
+      id: 'g2',
+      title: 'Trivia Challenge',
+      description: 'Test your knowledge about cars, communities, and tech.',
+      icon: '🧠',
+      category: 'Quiz',
+      plays: '9.5k',
+      rating: 4.6
+    },
+    {
+      id: 'g3',
+      title: 'Scratch Card',
+      description: 'Reveal matching cards to claim exclusive community rewards.',
+      icon: '🎫',
+      category: 'Rewards',
+      plays: '22.1k',
+      rating: 4.9
+    }
   ]
 
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-20">
       <Header />
-      
-      <main className="px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">More</h1>
+      <TopTabs />
 
-        {/* User Profile Card */}
-        <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm border border-purple-100 flex items-center gap-4">
-          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-xl">
-            {user?.name?.[0] || 'G'}
+      <main className="px-4 py-4">
+        {/* Banner Section */}
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-5 text-white mb-6 shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Gamepad2 className="w-6 h-6" /> Fun Zone
+            </h2>
+            <span className="bg-white/20 text-xs px-2 py-1 rounded-full font-medium backdrop-blur-sm">
+              ⚡ Live Rewards
+            </span>
           </div>
-          <div>
-            <h2 className="font-bold text-lg text-gray-900">{user?.name || 'Guest User'}</h2>
-            <p className="text-gray-500 text-sm">{user?.email || 'Sign in to manage your account'}</p>
+          <p className="text-purple-100 text-sm mb-4">
+            Play quick mini-games, compete with other users, and collect points.
+          </p>
+          <div className="bg-white/10 rounded-xl p-3 flex justify-between items-center backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-sm">
+              <Trophy className="w-4 h-4 text-amber-300" />
+              <span>Your Points: <strong>{user?.points || 0} pts</strong></span>
+            </div>
+            <button className="text-xs bg-white text-purple-600 font-bold px-3 py-1.5 rounded-lg hover:bg-purple-50 transition-colors">
+              Leaderboard
+            </button>
           </div>
         </div>
 
-        {/* Settings Menu */}
-        <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden mb-6">
-          {menuItems.map((item, index) => (
-            <button 
-              key={index}
-              className={`w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${
-                index !== menuItems.length - 1 ? 'border-b border-gray-100' : ''
-              }`}
+        {/* Section Title */}
+        <h3 className="font-bold text-gray-900 text-lg mb-3 flex items-center gap-2">
+          <span>🎮</span> Popular Mini-Games
+        </h3>
+
+        {/* Games List Container */}
+        <div className="space-y-4">
+          {games.map((game) => (
+            <div 
+              key={game.id} 
+              className="bg-white rounded-2xl p-4 border border-purple-100 shadow-sm flex gap-4 hover:border-purple-300 transition-all"
             >
-              <div className="flex items-center gap-3">
-                <div className={`${item.color}`}>{item.icon}</div>
-                <span className="font-medium text-gray-700">{item.label}</span>
+              <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center text-3xl shadow-inner shrink-0">
+                {game.icon}
               </div>
-              {item.isToggle ? (
-                <div className="w-10 h-5 bg-gray-200 rounded-full relative">
-                  <div className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full"></div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                    {game.category}
+                  </span>
+                  <div className="flex items-center text-xs text-amber-500 gap-0.5 ml-auto">
+                    <Star className="w-3 h-3 fill-amber-500" />
+                    <span className="font-semibold text-gray-700">{game.rating}</span>
+                  </div>
                 </div>
-              ) : (
-                <ChevronRight className="w-5 h-5 text-gray-300" />
-              )}
-            </button>
+                
+                <h4 className="font-bold text-gray-900 text-base mb-1 truncate">{game.title}</h4>
+                <p className="text-gray-500 text-xs line-clamp-2 mb-3 leading-relaxed">{game.description}</p>
+                
+                <div className="flex items-center justify-between pt-1 border-t border-gray-50">
+                  <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                    <Users className="w-3 h-3" /> {game.plays} plays today
+                  </span>
+                  <button 
+                    onClick={() => alert(`Launching ${game.title}! Let's play!`)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-4 py-1.5 rounded-xl flex items-center gap-1 shadow-sm transition-colors"
+                  >
+                    <Play className="w-3 h-3 fill-white" /> Play
+                  </button>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
-
-        {/* Logout Button */}
-        <button 
-          onClick={logout}
-          className="w-full bg-white rounded-2xl p-4 shadow-sm border border-red-100 flex items-center justify-center gap-2 text-red-600 font-bold hover:bg-red-50 transition-colors"
-        >
-          <LogOut className="w-5 h-5" />
-          Logout
-        </button>
       </main>
 
       <BottomNavigation />
