@@ -23,7 +23,7 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
   }
 
   return (
-    <div className="gradient-header sticky top-0 z-50">
+    <div className="gradient-header">
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 py-2.5">
         {/* Logo */}
@@ -176,8 +176,18 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
             <div className="flex items-center gap-2">
               {notifications.length > 0 && (
                 <button 
-                  onClick={clearNotifications}
+                  onClick={() => {
+                    notifications.forEach(n => markNotificationRead(n.id))
+                  }}
                   className="text-xs text-purple-600 hover:underline"
+                >
+                  Mark all as read
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button 
+                  onClick={clearNotifications}
+                  className="text-xs text-gray-400 hover:text-gray-600"
                 >
                   Clear all
                 </button>
