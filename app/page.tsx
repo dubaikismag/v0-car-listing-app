@@ -1,228 +1,346 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState } from 'react'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
-import { useAppStore, categories as storeCategories } from '@/lib/store'
-import { ListingCard } from '@/components/listing-card'
-import { Filter, X, MapPin, Check } from 'lucide-react'
+import { useAppStore } from '@/lib/store'
+import { ChevronRight, Zap, Phone, Gift, Crown, MapPin } from 'lucide-react'
 
-const categoryFilters = [
-  { id: 'All', name: 'All', emoji: '📋' },
-  ...storeCategories.map(c => ({ id: c.name, name: c.name, emoji: c.emoji }))
+// Featured Ads Data
+const featuredAds = [
+  { id: '1', badge: 'HOT', emoji: '🚗', price: 'AED 28,000', title: 'Toyota Camry 2020', location: 'Dubai Marina', verified: true, time: '1h ago', bgColor: 'bg-gray-50' },
+  { id: '2', badge: 'NEW', emoji: '🏠', price: 'AED 3,500/mo', title: '1 BHK Furnished', location: 'Deira, Dubai', verified: true, time: '2h', bgColor: 'bg-blue-50' },
+  { id: '3', badge: 'SALE', emoji: '📱', price: 'AED 1,200', title: 'iPhone 14 Pro 256GB', location: 'Sharjah', verified: true, time: '3h', bgColor: 'bg-purple-50' },
 ]
 
-const sortFilters = [
-  { id: 'Newest', name: 'Newest', emoji: '🕐' },
-  { id: 'Price', name: 'Price', emoji: '💰' },
-  { id: 'Near me', name: 'Near me', emoji: '📍' },
-  { id: 'Verified', name: 'Verified', emoji: '✓' }
+// Labour Services Data
+const labourServices = [
+  { id: '1', emoji: '👷', price: 'AED 2,200/mo', title: 'AC Technician', origin: 'Kerala', status: 'Available', experience: '5yr', bgColor: 'bg-amber-50' },
+  { id: '2', emoji: '🔧', price: 'AED 1,900/mo', title: 'Plumber', origin: 'Rajasthan', status: 'Available', experience: '3yr', bgColor: 'bg-orange-50' },
 ]
 
-function BrowseContent() {
-  const searchParams = useSearchParams()
-  const { getFilteredListings, searchQuery, selectedLocation, setSearchQuery } = useAppStore()
-  
-  const initialCategory = searchParams.get('category') || 'All'
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory)
-  const [selectedSort, setSelectedSort] = useState('Newest')
-  const [showFilterModal, setShowFilterModal] = useState(false)
-  const [localSearch, setLocalSearch] = useState(searchQuery)
+// Farmland Data
+const farmlandAds = [
+  { id: '1', badge: 'FARM', emoji: '🌾', price: 'AED 45,000/yr', title: 'Farm Plot 2 acres', location: 'Al Ain', status: 'Available', bgColor: 'bg-green-50' },
+  { id: '2', badge: 'FRESH', emoji: '🥦', price: 'AED 120/kg', title: 'Organic Dates - Direct', location: 'RAK', status: 'Fresh', bgColor: 'bg-lime-50' },
+  { id: '3', badge: 'TOOLS', emoji: '🚜', price: 'AED 8,500', title: 'Mini Tractor - Used', location: 'Fujairah', status: 'Used', bgColor: 'bg-yellow-50' },
+]
 
-  useEffect(() => {
-    const category = searchParams.get('category')
-    if (category) {
-      setSelectedCategory(category)
-    }
-  }, [searchParams])
+// WhatsApp Active Data
+const whatsappActive = [
+  { id: '1', emoji: '👷', title: 'Electrician Needed', time: 'Active 5 min ago', bgColor: 'bg-green-50' },
+  { id: '2', emoji: '🏠', title: 'Room Deira AED 900', time: 'Active 12 min ago', bgColor: 'bg-green-50' },
+  { id: '3', emoji: '🚗', title: 'Driver Hiring Now', time: 'Active 1h ago', bgColor: 'bg-green-50' },
+]
 
-  const handleSearch = (query: string) => {
-    setLocalSearch(query)
-    setSearchQuery(query)
-  }
+// Browse Categories
+const browseCategories = [
+  { id: 'vehicles', name: 'Vehicles', emoji: '🚗', href: '/browse?category=Cars' },
+  { id: 'property', name: 'Property', emoji: '🏠', href: '/browse?category=Rooms' },
+  { id: 'jobs', name: 'Jobs', emoji: '💼', href: '/browse?category=Jobs' },
+  { id: 'labour', name: 'Labour', emoji: '👷', href: '/browse?category=Services' },
+  { id: 'electronics', name: 'Electronics', emoji: '📱', href: '/browse?category=Buy & Sell' },
+  { id: 'furniture', name: 'Furniture', emoji: '🛋️', href: '/browse?category=Buy & Sell' },
+  { id: 'farmland', name: 'Farmland', emoji: '🌾', href: '/browse?category=Buy & Sell' },
+  { id: 'more', name: 'More...', emoji: '📦', href: '/browse' },
+]
 
-  const filteredListings = getFilteredListings(
-    selectedCategory === 'All' ? undefined : selectedCategory,
-    selectedSort,
-    localSearch,
-    selectedSort === 'Near me' ? selectedLocation : undefined
-  )
+// Labour Chips
+const labourChips = ['All', 'Electrician', 'Plumber', 'Painter', 'AC Tech', 'Driver']
+
+export default function HomePage() {
+  const { listings, isAuthenticated } = useAppStore()
+  const [selectedLabourChip, setSelectedLabourChip] = useState('All')
 
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-20">
-      <Header 
-        onSearch={handleSearch}
-        onFilter={() => setShowFilterModal(true)}
-      />
+      <Header />
       <TopTabs />
 
-      <main className="px-4 py-4">
-        {/* Category Filters */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
-          {categoryFilters.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-all ${
-                selectedCategory === cat.id
-                  ? 'bg-purple-100/80 text-purple-700 border-purple-300/60 backdrop-blur-sm shadow-sm'
-                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {cat.emoji && <span>{cat.emoji}</span>}
-              <span>{cat.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Sort Filters */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
-          {sortFilters.map((sort) => (
-            <button
-              key={sort.id}
-              onClick={() => setSelectedSort(sort.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                selectedSort === sort.id
-                  ? 'bg-amber-100/80 text-amber-700 border border-amber-300/60 backdrop-blur-sm shadow-sm'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <span>{sort.emoji}</span>
-              <span>{sort.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Results Count */}
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-gray-500 text-sm">{filteredListings.length} listings found</p>
-          {localSearch && (
-            <button 
-              onClick={() => { setLocalSearch(''); setSearchQuery(''); }}
-              className="text-purple-600 text-sm flex items-center gap-1"
-            >
-              Clear search <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-
-        {/* Location indicator if "Near me" is active */}
-        {selectedSort === 'Near me' && (
-          <div className="mb-4 p-3 bg-purple-50 rounded-xl flex items-center gap-2 text-sm">
-            <MapPin className="w-4 h-4 text-purple-600" />
-            <span className="text-purple-700">Showing listings near: <strong>{selectedLocation}</strong></span>
+      <main className="px-4 py-4 space-y-6">
+        {/* Stats Row */}
+        <div className="flex justify-between text-center py-2">
+          <div>
+            <p className="text-purple-600 font-bold text-lg">48K+</p>
+            <p className="text-gray-500 text-xs">Listings</p>
           </div>
-        )}
+          <div>
+            <p className="text-purple-600 font-bold text-lg">12K+</p>
+            <p className="text-gray-500 text-xs">Members</p>
+          </div>
+          <div>
+            <p className="text-purple-600 font-bold text-lg">180+</p>
+            <p className="text-gray-500 text-xs">Countries</p>
+          </div>
+          <div>
+            <p className="text-amber-500 font-bold text-lg">98%</p>
+            <p className="text-gray-500 text-xs">Verified</p>
+          </div>
+        </div>
 
-        {/* Listings Grid */}
-        {filteredListings.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {filteredListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+        {/* Hero Banner */}
+        <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-5 text-white relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-32 h-32 bg-purple-400/20 rounded-full -mr-10 -mt-10" />
+          <div className="absolute right-10 bottom-0 w-20 h-20 bg-purple-400/20 rounded-full -mb-5" />
+          <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-medium mb-3">
+            🇦🇪 DUBAI #1 CLASSIFIEDS
+          </span>
+          <h2 className="text-xl font-bold mb-1">Buy, Sell & Connect</h2>
+          <h2 className="text-xl font-bold mb-2">Instantly in UAE</h2>
+          <p className="text-purple-100 text-sm mb-4">Post your first ad FREE - 12,000+ active buyers</p>
+          <Link href="/post" className="inline-block bg-amber-400 text-purple-900 px-5 py-2.5 rounded-full font-bold text-sm">
+            Post Free Ad &rsaquo;
+          </Link>
+        </div>
+
+        {/* Labour Profiles Banner */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <Zap className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-amber-700 text-sm">
+            <span className="font-semibold text-amber-800">New:</span> Verified Labour Profiles - hire trusted workers instantly in Dubai
+          </p>
+        </div>
+
+        {/* Browse Categories */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900">Browse Categories</h3>
+            <Link href="/browse" className="text-purple-600 text-sm font-medium flex items-center">
+              All <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {browseCategories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={cat.href}
+                className="flex flex-col items-center gap-1.5 p-3 bg-white rounded-xl border border-gray-100"
+              >
+                <span className="text-2xl">{cat.emoji}</span>
+                <span className="text-xs font-medium text-gray-700 text-center">{cat.name}</span>
+              </Link>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <span className="text-5xl block mb-4">🔍</span>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">No listings found</h3>
-            <p className="text-gray-500 text-sm mb-4">Try adjusting your filters or search terms</p>
-            <button 
-              onClick={() => { setSelectedCategory('All'); setSelectedSort('Newest'); setLocalSearch(''); setSearchQuery(''); }}
-              className="px-6 py-2 bg-purple-600 text-white rounded-full font-semibold text-sm"
-            >
-              Clear Filters
-            </button>
+        </section>
+
+        {/* Featured Ads */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-lg">⭐</span> Featured Ads
+            </h3>
+            <Link href="/browse" className="text-purple-600 text-sm font-medium flex items-center">
+              All <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
-        )}
-      </main>
-
-      {/* Filter Modal */}
-      {showFilterModal && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
-          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-              <button onClick={() => setShowFilterModal(false)} className="p-2">
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            <div className="px-4 py-4">
-              {/* Category Selection */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Category</h3>
-                <div className="flex flex-wrap gap-2">
-                  {categoryFilters.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium ${
-                        selectedCategory === cat.id
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {cat.emoji} {cat.name}
-                    </button>
-                  ))}
+          <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4">
+            {featuredAds.map((ad) => (
+              <Link key={ad.id} href={`/listing/${ad.id}`} className="flex-shrink-0 w-44">
+                <div className={`${ad.bgColor} rounded-xl border border-gray-100 overflow-hidden`}>
+                  <div className="relative h-24 flex items-center justify-center">
+                    <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold text-white ${
+                      ad.badge === 'HOT' ? 'bg-red-500' : ad.badge === 'NEW' ? 'bg-purple-500' : 'bg-green-500'
+                    }`}>
+                      {ad.badge}
+                    </span>
+                    <div className="absolute top-2 right-2 w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-xs">🏷️</span>
+                    </div>
+                    <span className="text-4xl">{ad.emoji}</span>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-purple-600 font-bold text-sm">{ad.price}</p>
+                    <p className="text-gray-900 font-medium text-xs truncate">{ad.title}</p>
+                    <p className="text-gray-500 text-[10px] flex items-center gap-1 mt-1">
+                      <MapPin className="w-3 h-3" /> {ad.location}
+                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      {ad.verified && (
+                        <span className="text-green-600 text-[10px] font-medium flex items-center gap-0.5">
+                          ✓ Verified
+                        </span>
+                      )}
+                      <span className="text-gray-400 text-[10px]">{ad.time}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </Link>
+            ))}
+          </div>
+        </section>
 
-              {/* Sort Selection */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Sort By</h3>
-                <div className="space-y-2">
-                  {sortFilters.map((sort) => (
-                    <button
-                      key={sort.id}
-                      onClick={() => setSelectedSort(sort.id)}
-                      className={`w-full flex items-center justify-between p-4 rounded-xl border ${
-                        selectedSort === sort.id
-                          ? 'border-purple-500 bg-purple-50'
-                          : 'border-gray-200 bg-white'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span>{sort.emoji}</span>
-                        <span className="font-medium text-gray-900">{sort.name}</span>
-                      </span>
-                      {selectedSort === sort.id && <Check className="w-5 h-5 text-purple-600" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
+        {/* Labour & Services */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-lg">👷</span> Labour & Services
+            </h3>
+            <Link href="/browse?category=Services" className="text-purple-600 text-sm font-medium flex items-center">
+              All <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <p className="text-gray-500 text-xs mb-3">Plumbing, electrical, painting, cleaning & more</p>
+          
+          {/* Labour Chips */}
+          <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
+            {labourChips.map((chip) => (
               <button
-                onClick={() => setShowFilterModal(false)}
-                className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl"
+                key={chip}
+                onClick={() => setSelectedLabourChip(chip)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-all ${
+                  selectedLabourChip === chip
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-700 border-gray-200'
+                }`}
               >
-                Apply Filters
+                {chip}
               </button>
+            ))}
+          </div>
+
+          {/* Labour Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            {labourServices.map((service) => (
+              <Link key={service.id} href={`/listing/${service.id}`}>
+                <div className={`${service.bgColor} rounded-xl border border-gray-100 p-3`}>
+                  <div className="h-20 flex items-center justify-center mb-2">
+                    <span className="text-4xl">{service.emoji}</span>
+                  </div>
+                  <p className="text-purple-600 font-bold text-sm">{service.price}</p>
+                  <p className="text-gray-900 font-medium text-xs">{service.title} &bull; {service.origin}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-green-600 text-[10px] font-medium bg-green-50 px-2 py-0.5 rounded">
+                      {service.status}
+                    </span>
+                    <span className="text-gray-500 text-[10px] bg-gray-100 px-2 py-0.5 rounded">
+                      {service.experience}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Farmland & Agriculture */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-lg">🌾</span> Farmland & Agriculture
+            </h3>
+            <Link href="/browse?category=Buy & Sell" className="text-purple-600 text-sm font-medium flex items-center">
+              All <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4">
+            {farmlandAds.map((ad) => (
+              <Link key={ad.id} href={`/listing/${ad.id}`} className="flex-shrink-0 w-40">
+                <div className={`${ad.bgColor} rounded-xl border border-gray-100 overflow-hidden`}>
+                  <div className="relative h-24 flex items-center justify-center">
+                    <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold text-white ${
+                      ad.badge === 'FARM' ? 'bg-green-600' : ad.badge === 'FRESH' ? 'bg-lime-500' : 'bg-amber-500'
+                    }`}>
+                      {ad.badge}
+                    </span>
+                    <span className="text-4xl">{ad.emoji}</span>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-purple-600 font-bold text-sm">{ad.price}</p>
+                    <p className="text-gray-900 font-medium text-xs truncate">{ad.title}</p>
+                    <p className="text-gray-500 text-[10px] flex items-center gap-1 mt-1">
+                      <MapPin className="w-3 h-3" /> {ad.location}
+                    </p>
+                    <span className={`inline-block mt-2 text-[10px] font-medium px-2 py-0.5 rounded ${
+                      ad.status === 'Available' ? 'bg-green-100 text-green-700' : 
+                      ad.status === 'Fresh' ? 'bg-lime-100 text-lime-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {ad.status}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* AI Recommended Banner */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl p-4 flex items-center gap-3">
+          <span className="text-2xl">🤖</span>
+          <p className="text-white font-medium text-sm">AI - RECOMMENDED FOR YOU</p>
+        </div>
+
+        {/* WhatsApp Active */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-lg">💬</span> WhatsApp Active
+            </h3>
+            <Link href="/browse" className="text-purple-600 text-sm font-medium flex items-center">
+              All <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+          <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4">
+            {whatsappActive.map((item) => (
+              <Link key={item.id} href={`/listing/${item.id}`} className="flex-shrink-0 w-40">
+                <div className={`${item.bgColor} rounded-xl border border-green-200 p-3 relative`}>
+                  <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">💬</span>
+                  </div>
+                  <div className="h-16 flex items-center justify-center mb-2">
+                    <span className="text-3xl">{item.emoji}</span>
+                  </div>
+                  <p className="text-gray-900 font-semibold text-xs">{item.title}</p>
+                  <p className="text-gray-500 text-[10px] mt-1">{item.time}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Emergency Help Banner */}
+        <Link href="/help" className="block">
+          <div className="bg-red-600 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xs">SOS</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-bold">Emergency Help</p>
+              <p className="text-red-100 text-xs">Labour rights, lost documents, medical help in UAE</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-white" />
+          </div>
+        </Link>
+
+        {/* Refer & Earn Banner */}
+        <div className="bg-purple-600 rounded-xl p-4 flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-white font-bold">Refer & Earn</p>
+            <p className="text-purple-200 text-xs mb-2">Invite friends, earn 50 coins each!</p>
+            <div className="inline-block px-3 py-1.5 border border-dashed border-purple-300 rounded text-purple-100 text-xs font-mono">
+              KISMAG2025
             </div>
           </div>
+          <span className="text-4xl">🎁</span>
         </div>
-      )}
+
+        {/* Go VIP Banner */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+          <span className="text-2xl">👑</span>
+          <div className="flex-1">
+            <p className="text-gray-900 font-bold">Go VIP - Get 10x More Views</p>
+            <p className="text-gray-600 text-xs">Featured badge &bull; Priority listing &bull; Verified tick</p>
+          </div>
+          <Link href="/rewards" className="px-4 py-2 bg-amber-500 text-white rounded-full font-bold text-sm">
+            Upgrade
+          </Link>
+        </div>
+      </main>
 
       <BottomNavigation />
       <AuthModal />
     </div>
-  )
-}
-
-export default function BrowsePage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#f5f3ff] flex items-center justify-center">
-        <div className="text-center">
-          <span className="text-4xl animate-pulse">🔍</span>
-          <p className="text-gray-500 mt-2">Loading...</p>
-        </div>
-      </div>
-    }>
-      <BrowseContent />
-    </Suspense>
   )
 }
