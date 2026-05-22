@@ -52,7 +52,7 @@ function TopTabsContent({ onTabChange }: TopTabsProps) {
   const activeTab = getActiveTab()
 
   return (
-    <div className="sticky top-[125px] z-40 bg-white border-b border-gray-100 shadow-sm w-full">
+    <div className="fixed top-[125px] left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-sm w-full">
       <div className="flex overflow-x-auto hide-scrollbar px-2 py-2 gap-1">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
@@ -83,7 +83,7 @@ function TopTabsContent({ onTabChange }: TopTabsProps) {
 export function TopTabs({ onTabChange }: TopTabsProps) {
   return (
     <Suspense fallback={
-      <div className="sticky top-[125px] z-40 bg-white border-b border-gray-100 shadow-sm w-full">
+      <div className="fixed top-[125px] left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-sm w-full">
         <div className="flex overflow-x-auto hide-scrollbar px-2 py-2 gap-1">
           {tabs.map((tab) => (
             <div key={tab.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap text-sm font-medium text-gray-400">

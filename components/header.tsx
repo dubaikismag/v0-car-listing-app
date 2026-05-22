@@ -23,7 +23,7 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
   }
 
   return (
-    <div className="gradient-header sticky top-0 z-50 w-full">
+    <div className="gradient-header fixed top-0 left-0 right-0 z-50 w-full">
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 py-2.5">
         {/* Logo */}
