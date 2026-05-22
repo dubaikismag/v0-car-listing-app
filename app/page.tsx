@@ -39,12 +39,12 @@ const whatsappActive = [
 // Browse Categories
 const browseCategories = [
   { id: 'vehicles', name: 'Vehicles', emoji: '🚗', href: '/browse?category=Cars' },
-  { id: 'realestate', name: 'Real Estate', emoji: '🏠', href: '/browse?category=Rooms' },
+  { id: 'realestate', name: 'Real Estate', emoji: '🏢', href: '/browse?category=Rooms' },
   { id: 'jobs', name: 'Jobs', emoji: '💼', href: '/browse?category=Jobs' },
-  { id: 'services', name: 'Home & Community Services', emoji: '🛠️', href: '/browse?category=Services' },
+  { id: 'services', name: 'Services', emoji: '🛠️', href: '/browse?category=Services' },
   { id: 'electronics', name: 'Electronics', emoji: '📱', href: '/browse?category=Buy & Sell' },
+  { id: 'furniture', name: 'Furniture', emoji: '🛋️', href: '/browse?category=Buy & Sell' },
   { id: 'community', name: 'Community', emoji: '👥', href: '/browse?category=Community' },
-  { id: 'furniture', name: 'Furniture & Home Goods', emoji: '🛋️', href: '/browse?category=Buy & Sell' },
   { id: 'more', name: 'More...', emoji: '📦', href: '/browse' },
 ]
 
@@ -69,7 +69,7 @@ export default function HomePage() {
       <Header />
       <TopTabs />
 
-      <main className="px-4 py-4 space-y-6">
+      <main className="px-4 py-4 space-y-6 pt-40">
         {/* Stats Row */}
         <div className="flex justify-between text-center py-2">
           <div>
@@ -185,7 +185,7 @@ export default function HomePage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <span className="text-lg">🛠️</span> Home & Community Services
+              <span className="text-lg">🛠️</span> Services
             </h3>
             <Link href="/browse?category=Services" className="text-purple-600 text-sm font-medium flex items-center">
               All <ChevronRight className="w-4 h-4" />

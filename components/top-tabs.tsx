@@ -43,7 +43,7 @@ function TopTabsContent({ onTabChange }: TopTabsProps) {
       if (category === 'Buy & Sell') return 'Buy & Sell'
       if (category === 'Wanted') return 'Wanted'
       if (category === 'Community') return 'Community'
-      return 'Home'
+      return 'Browse'
     }
     if (pathname === '/fun') return 'Fun'
     return currentTab
