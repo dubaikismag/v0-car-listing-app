@@ -7,7 +7,7 @@ import { useAppStore } from '@/lib/store'
 const tabs = [
   { id: 'Home', emoji: '🏠', href: '/' },
   { id: 'Jobs', emoji: '💼', href: '/browse?category=Jobs' },
-  { id: 'Rooms', emoji: '🏠', href: '/browse?category=Rooms' },
+  { id: 'Real Estate', emoji: '🏢', href: '/browse?category=Rooms' },
   { id: 'Cars', emoji: '🚗', href: '/browse?category=Cars' },
   { id: 'Services', emoji: '🛠', href: '/browse?category=Services' },
   { id: 'Buy & Sell', emoji: '🛒', href: '/browse?category=Buy & Sell' },
@@ -37,7 +37,7 @@ function TopTabsContent({ onTabChange }: TopTabsProps) {
     if (pathname === '/browse') {
       const category = searchParams.get('category')
       if (category === 'Jobs') return 'Jobs'
-      if (category === 'Rooms') return 'Rooms'
+      if (category === 'Rooms') return 'Real Estate'
       if (category === 'Cars') return 'Cars'
       if (category === 'Services') return 'Services'
       if (category === 'Buy & Sell') return 'Buy & Sell'
