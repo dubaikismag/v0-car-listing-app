@@ -39,44 +39,53 @@ const whatsappActive = [
 // Browse Categories
 const browseCategories = [
   { id: 'vehicles', name: 'Vehicles', emoji: '🚗', href: '/browse?category=Cars' },
-  { id: 'property', name: 'Property', emoji: '🏠', href: '/browse?category=Rooms' },
+  { id: 'realestate', name: 'Real Estate', emoji: '🏢', href: '/browse?category=Rooms' },
   { id: 'jobs', name: 'Jobs', emoji: '💼', href: '/browse?category=Jobs' },
-  { id: 'labour', name: 'Labour', emoji: '👷', href: '/browse?category=Services' },
+  { id: 'services', name: 'Services', emoji: '🛠️', href: '/browse?category=Services' },
   { id: 'electronics', name: 'Electronics', emoji: '📱', href: '/browse?category=Buy & Sell' },
   { id: 'furniture', name: 'Furniture', emoji: '🛋️', href: '/browse?category=Buy & Sell' },
-  { id: 'farmland', name: 'Farmland', emoji: '🌾', href: '/browse?category=Buy & Sell' },
+  { id: 'community', name: 'Community', emoji: '👥', href: '/browse?category=Community' },
   { id: 'more', name: 'More...', emoji: '📦', href: '/browse' },
 ]
 
-// Labour Chips
-const labourChips = ['All', 'Electrician', 'Plumber', 'Painter', 'AC Tech', 'Driver']
+// Services Chips (updated)
+const serviceChips = ['All', 'Electrician', 'Plumber', 'Painter', 'AC Tech', 'Tutors', 'Movers', 'Cleaning', 'IT Support']
+
+// Trending Motors Data (replaces Farmland)
+const trendingMotors = [
+  { id: '1', badge: 'GCC', emoji: '🚗', price: 'AED 45,000', title: 'Toyota Camry 2022', location: 'Al Ain', status: 'Premium', bgColor: 'bg-blue-50' },
+  { id: '2', badge: 'SUV', emoji: '🚙', price: 'AED 120,000', title: 'Nissan Patrol', location: 'Dubai', status: 'Clean', bgColor: 'bg-gray-50' },
+  { id: '3', badge: 'LUXURY', emoji: '🏎️', price: 'AED 250,000', title: 'BMW X7', location: 'Dubai Marina', status: 'Verified', bgColor: 'bg-purple-50' },
+]
 
 export default function HomePage() {
   const { listings, isAuthenticated } = useAppStore()
-  const [selectedLabourChip, setSelectedLabourChip] = useState('All')
+  const [selectedServiceChip, setSelectedServiceChip] = useState('All')
+  const [listingCount, setListingCount] = useState(27)
+  const [memberCount, setMemberCount] = useState(22)
 
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-20">
       <Header />
       <TopTabs />
 
-      <main className="px-4 py-4 space-y-6">
+      <main className="px-4 py-4 space-y-6 pt-40">
         {/* Stats Row */}
         <div className="flex justify-between text-center py-2">
           <div>
-            <p className="text-purple-600 font-bold text-lg">48K+</p>
-            <p className="text-gray-500 text-xs">Listings</p>
+            <p className="text-purple-600 font-bold text-lg">{listingCount}+</p>
+            <p className="text-gray-500 text-xs">Active Listings</p>
           </div>
           <div>
-            <p className="text-purple-600 font-bold text-lg">12K+</p>
+            <p className="text-purple-600 font-bold text-lg">{memberCount}+</p>
             <p className="text-gray-500 text-xs">Members</p>
           </div>
           <div>
-            <p className="text-purple-600 font-bold text-lg">180+</p>
+            <p className="text-purple-600 font-bold text-lg">190+</p>
             <p className="text-gray-500 text-xs">Countries</p>
           </div>
           <div>
-            <p className="text-amber-500 font-bold text-lg">98%</p>
+            <p className="text-amber-500 font-bold text-lg">92%</p>
             <p className="text-gray-500 text-xs">Verified</p>
           </div>
         </div>
@@ -86,21 +95,21 @@ export default function HomePage() {
           <div className="absolute right-0 top-0 w-32 h-32 bg-purple-400/20 rounded-full -mr-10 -mt-10" />
           <div className="absolute right-10 bottom-0 w-20 h-20 bg-purple-400/20 rounded-full -mb-5" />
           <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-medium mb-3">
-            🇦🇪 DUBAI #1 CLASSIFIEDS
+            🇦🇪 POST YOUR AD FREE
           </span>
-          <h2 className="text-xl font-bold mb-1">Buy, Sell & Connect</h2>
-          <h2 className="text-xl font-bold mb-2">Instantly in UAE</h2>
-          <p className="text-purple-100 text-sm mb-4">Post your first ad FREE - 12,000+ active buyers</p>
+          <h2 className="text-xl font-bold mb-1">Buy, Sell, Hire &</h2>
+          <h2 className="text-xl font-bold mb-2">Connect Across Dubai</h2>
+          <p className="text-purple-100 text-sm mb-4">Connect instantly with active buyers, renters, job seekers, and UAE communities.</p>
           <Link href="/post" className="inline-block bg-amber-400 text-purple-900 px-5 py-2.5 rounded-full font-bold text-sm">
             Post Free Ad &rsaquo;
           </Link>
         </div>
 
-        {/* Labour Profiles Banner */}
+        {/* Verified Professionals Banner */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
           <Zap className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
           <p className="text-amber-700 text-sm">
-            <span className="font-semibold text-amber-800">New:</span> Verified Labour Profiles - hire trusted workers instantly in Dubai
+            <span className="font-semibold text-amber-800">New:</span> Verified Professionals - hire trusted verified professionals instantly across Dubai
           </p>
         </div>
 
@@ -176,22 +185,22 @@ export default function HomePage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <span className="text-lg">👷</span> Labour & Services
+              <span className="text-lg">🛠️</span> Services
             </h3>
             <Link href="/browse?category=Services" className="text-purple-600 text-sm font-medium flex items-center">
               All <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-          <p className="text-gray-500 text-xs mb-3">Plumbing, electrical, painting, cleaning & more</p>
+          <p className="text-gray-500 text-xs mb-3">Moving, maintenance, cleaning, tutoring & more</p>
           
-          {/* Labour Chips */}
+          {/* Service Chips */}
           <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
-            {labourChips.map((chip) => (
+            {serviceChips.map((chip) => (
               <button
                 key={chip}
-                onClick={() => setSelectedLabourChip(chip)}
+                onClick={() => setSelectedServiceChip(chip)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-all ${
-                  selectedLabourChip === chip
+                  selectedServiceChip === chip
                     ? 'bg-gray-900 text-white border-gray-900'
                     : 'bg-white text-gray-700 border-gray-200'
                 }`}
@@ -201,7 +210,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Labour Cards */}
+          {/* Service Cards */}
           <div className="grid grid-cols-2 gap-3">
             {labourServices.map((service) => (
               <Link key={service.id} href={`/listing/${service.id}`}>
@@ -225,23 +234,23 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Farmland & Agriculture */}
+        {/* Trending Motors (replaces Farmland) */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <span className="text-lg">🌾</span> Farmland & Agriculture
+              <span className="text-lg">🏎️</span> Trending Motors
             </h3>
-            <Link href="/browse?category=Buy & Sell" className="text-purple-600 text-sm font-medium flex items-center">
+            <Link href="/browse?category=Cars" className="text-purple-600 text-sm font-medium flex items-center">
               All <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
           <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-2 -mx-4 px-4">
-            {farmlandAds.map((ad) => (
+            {trendingMotors.map((ad) => (
               <Link key={ad.id} href={`/listing/${ad.id}`} className="flex-shrink-0 w-40">
                 <div className={`${ad.bgColor} rounded-xl border border-gray-100 overflow-hidden`}>
                   <div className="relative h-24 flex items-center justify-center">
                     <span className={`absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold text-white ${
-                      ad.badge === 'FARM' ? 'bg-green-600' : ad.badge === 'FRESH' ? 'bg-lime-500' : 'bg-amber-500'
+                      ad.badge === 'GCC' ? 'bg-blue-600' : ad.badge === 'SUV' ? 'bg-gray-600' : 'bg-purple-600'
                     }`}>
                       {ad.badge}
                     </span>
@@ -254,8 +263,8 @@ export default function HomePage() {
                       <MapPin className="w-3 h-3" /> {ad.location}
                     </p>
                     <span className={`inline-block mt-2 text-[10px] font-medium px-2 py-0.5 rounded ${
-                      ad.status === 'Available' ? 'bg-green-100 text-green-700' : 
-                      ad.status === 'Fresh' ? 'bg-lime-100 text-lime-700' : 'bg-amber-100 text-amber-700'
+                      ad.status === 'Premium' ? 'bg-blue-100 text-blue-700' : 
+                      ad.status === 'Clean' ? 'bg-gray-100 text-gray-700' : 'bg-purple-100 text-purple-700'
                     }`}>
                       {ad.status}
                     </span>
@@ -272,11 +281,11 @@ export default function HomePage() {
           <p className="text-white font-medium text-sm">AI - RECOMMENDED FOR YOU</p>
         </div>
 
-        {/* WhatsApp Active */}
+        {/* Live & Online */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <span className="text-lg">💬</span> WhatsApp Active
+              <span className="text-lg">💬</span> Live & Online
             </h3>
             <Link href="/browse" className="text-purple-600 text-sm font-medium flex items-center">
               All <ChevronRight className="w-4 h-4" />

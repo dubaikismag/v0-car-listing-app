@@ -23,7 +23,7 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
   }
 
   return (
-    <div className="gradient-header">
+    <div className="gradient-header fixed top-0 left-0 right-0 z-50 w-full">
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 py-2.5">
         {/* Logo */}
@@ -141,7 +141,7 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
 
       {/* Location Picker Dropdown */}
       {showLocationPicker && (
-        <div className="absolute top-full left-0 right-0 bg-white shadow-lg max-h-64 overflow-y-auto z-50">
+        <div className="absolute top-full left-4 right-4 bg-white shadow-lg rounded-xl max-h-64 overflow-y-auto z-50">
           <div className="p-2">
             <button
               onClick={() => {
