@@ -207,15 +207,16 @@ export default function PostPage() {
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-24">
       <Header showSearch={false} />
+      <TopTabs />
       
-      <div className="bg-white px-4 py-3 flex items-center gap-3 border-b border-gray-100 sticky top-0 z-40 mt-32">
+      <div className="bg-white px-4 py-3 flex items-center gap-3 border-b border-gray-100 fixed top-[125px] left-0 right-0 z-40 w-full">
         <button onClick={() => router.back()} className="p-2 -ml-2">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <h1 className="text-lg font-bold text-gray-900">Post Your Ad</h1>
       </div>
 
-      <main className="px-4 py-4">
+      <main className="px-4 py-4 pt-40">
         <div className="flex items-center gap-3 mb-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
           <span className="text-3xl">📝</span>
           <div>
