@@ -141,7 +141,7 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
 
       {/* Location Picker Dropdown */}
       {showLocationPicker && (
-        <div className="absolute top-full left-4 right-4 bg-white shadow-lg rounded-xl max-h-64 overflow-y-auto z-50">
+        <div className="fixed top-[135px] left-4 right-4 bg-white shadow-lg rounded-xl max-h-64 overflow-y-auto z-50">
           <div className="p-2">
             <button
               onClick={() => {
@@ -170,7 +170,7 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
 
       {/* Notifications Panel */}
       {showNotifications && (
-        <div className="absolute top-full right-4 w-80 bg-white rounded-xl shadow-xl max-h-96 overflow-hidden z-50 mt-2">
+        <div className="fixed top-[50px] right-4 w-80 bg-white rounded-xl shadow-xl max-h-96 overflow-hidden z-50">
           <div className="flex items-center justify-between p-3 border-b border-gray-100">
             <h3 className="font-bold text-gray-900">Notifications</h3>
             <div className="flex items-center gap-2">
