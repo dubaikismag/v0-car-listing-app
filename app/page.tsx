@@ -69,9 +69,9 @@ export default function HomePage() {
       <Header />
       <TopTabs />
 
-      <main className="px-4 py-4 space-y-6 pt-6">
+      <main className="px-4 py-4 space-y-6 pt-1">
         {/* Stats Row */}
-        <div className="flex justify-between text-center py-4 mt-4">
+        <div className="flex justify-between text-center py-3">
           <div>
             <p className="text-purple-600 font-bold text-lg">{listingCount}+</p>
             <p className="text-gray-500 text-xs">Active Listings</p>
@@ -91,7 +91,7 @@ export default function HomePage() {
         </div>
 
         {/* Hero Banner */}
-        <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-5 text-white relative overflow-hidden mt-6">
+        <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-5 text-white relative overflow-hidden">
           <div className="absolute right-0 top-0 w-32 h-32 bg-purple-400/20 rounded-full -mr-10 -mt-10" />
           <div className="absolute right-10 bottom-0 w-20 h-20 bg-purple-400/20 rounded-full -mb-5" />
           <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-medium mb-3">
