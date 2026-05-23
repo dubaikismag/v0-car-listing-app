@@ -74,17 +74,7 @@ const supabase = createClient()
 export async function fetchListings(filters?: ListingFilters): Promise<Listing[]> {
   let query = supabase
     .from('listings')
-    .select(`
-      *,
-      profiles:user_id (
-        id,
-        name,
-        profile_picture_url,
-        verified,
-        rating,
-        member_since
-      )
-    `)
+    .select('*')
     .eq('status', filters?.status || 'active')
     .order('featured', { ascending: false })
     .order('created_at', { ascending: false })
@@ -139,17 +129,7 @@ export async function fetchListings(filters?: ListingFilters): Promise<Listing[]
 export async function fetchListingById(id: string): Promise<Listing | null> {
   const { data, error } = await supabase
     .from('listings')
-    .select(`
-      *,
-      profiles:user_id (
-        id,
-        name,
-        profile_picture_url,
-        verified,
-        rating,
-        member_since
-      )
-    `)
+    .select('*')
     .eq('id', id)
     .single()
 
@@ -184,17 +164,7 @@ export async function createListing(input: CreateListingInput): Promise<Listing>
       tags: input.tags || [],
       price_type: input.price_type || 'fixed'
     })
-    .select(`
-      *,
-      profiles:user_id (
-        id,
-        name,
-        profile_picture_url,
-        verified,
-        rating,
-        member_since
-      )
-    `)
+    .select('*')
     .single()
 
   if (error) {
@@ -202,8 +172,8 @@ export async function createListing(input: CreateListingInput): Promise<Listing>
     throw error
   }
 
-  // Update user's active ads count
-  await supabase.rpc('increment_active_ads', { user_id: user.id })
+  // Update user's active ads count - just log instead of calling RPC that doesn't exist
+  console.log('[v0] Listing created, user active ads should be incremented for:', user.id)
 
   return data as Listing
 }
@@ -217,17 +187,7 @@ export async function updateListing(id: string, updates: Partial<CreateListingIn
       updated_at: new Date().toISOString()
     })
     .eq('id', id)
-    .select(`
-      *,
-      profiles:user_id (
-        id,
-        name,
-        profile_picture_url,
-        verified,
-        rating,
-        member_since
-      )
-    `)
+    .select('*')
     .single()
 
   if (error) {

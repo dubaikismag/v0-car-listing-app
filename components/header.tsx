@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Search, User, ChevronDown, X, Bell } from 'lucide-react'
 import { useAppStore, uaeLocations } from '@/lib/store'
+import { useAuth } from '@/lib/auth-context'
 
 interface HeaderProps {
   showSearch?: boolean
@@ -11,11 +12,13 @@ interface HeaderProps {
 }
 
 export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
-  const { setShowAuthModal, isAuthenticated, user, selectedLocation, setSelectedLocation, searchQuery, setSearchQuery, isAdmin, notifications, markNotificationRead, clearNotifications } = useAppStore()
+  const { selectedLocation, setSelectedLocation, searchQuery, setSearchQuery, isAdmin, notifications, markNotificationRead, clearNotifications } = useAppStore()
+  const { user, openAuthModal } = useAuth()
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
 
   const unreadCount = notifications.filter(n => !n.read).length
+  const isAuthenticated = !!user
 
   const handleSearch = (value: string) => {
     setSearchQuery(value)
@@ -87,11 +90,11 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
 
           {/* User button with name or icon */}
           <button 
-            onClick={() => !isAuthenticated && setShowAuthModal(true)}
+            onClick={() => !isAuthenticated && openAuthModal()}
             className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center overflow-hidden"
           >
-            {user?.profilePicture ? (
-              <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
+            {user?.profile_picture_url ? (
+              <img src={user.profile_picture_url} alt={user.name} className="w-full h-full object-cover" />
             ) : (
               <User className="w-4 h-4 text-white" />
             )}
