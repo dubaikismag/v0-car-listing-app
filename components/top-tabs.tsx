@@ -52,8 +52,8 @@ function TopTabsContent({ onTabChange }: TopTabsProps) {
   const activeTab = getActiveTab()
 
   return (
-    <div className="fixed top-[120px] left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-sm w-full">
-        <div className="flex items-center overflow-x-auto hide-scrollbar px-2 pt-7 pb-2 gap-1 min-h-[50px] leading-none">
+    <div className="fixed top-[140px] left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-sm w-full">
+        <div className="flex items-center overflow-x-auto hide-scrollbar px-2 py-2 gap-1 min-h-[44px] leading-none">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
           const isPostTab = tab.id === '+ Post'
@@ -83,8 +83,8 @@ function TopTabsContent({ onTabChange }: TopTabsProps) {
 export function TopTabs({ onTabChange }: TopTabsProps) {
   return (
     <Suspense fallback={
-      <div className="fixed top-[120px] left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-sm w-full">
-      <div className="flex items-center overflow-x-auto hide-scrollbar px-2 pt-7 pb-2 gap-1 min-h-[50px] leading-none">
+      <div className="fixed top-[140px] left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-sm w-full">
+      <div className="flex items-center overflow-x-auto hide-scrollbar px-2 py-2 gap-1 min-h-[44px] leading-none">
           {tabs.map((tab) => (
             <div key={tab.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap text-sm font-medium text-gray-400">
               {tab.emoji && <span>{tab.emoji}</span>}

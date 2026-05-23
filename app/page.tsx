@@ -69,9 +69,9 @@ export default function HomePage() {
       <Header />
       <TopTabs />
 
-      <main className="px-4 py-4 space-y-6 pt-40">
+      <main className="px-4 pt-[192px] pb-4 space-y-6">
         {/* Stats Row */}
-        <div className="flex justify-between text-center py-3 pt-9">
+        <div className="flex justify-between text-center py-3">
           <div>
             <p className="text-purple-600 font-bold text-lg">{listingCount}+</p>
             <p className="text-gray-500 text-xs">Active Listings</p>

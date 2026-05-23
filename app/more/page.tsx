@@ -111,7 +111,7 @@ export default function MorePage() {
       <Header />
       <TopTabs />
 
-      <main>
+      <main className="pt-[192px]">
         {/* Profile Header */}
         <div className="gradient-purple px-4 py-8 text-center relative">
           {/* Edit Profile Button */}
