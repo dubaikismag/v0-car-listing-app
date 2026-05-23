@@ -71,7 +71,7 @@ export default function HomePage() {
 
       <main className="px-4 py-4 space-y-6 pt-40">
         {/* Stats Row */}
-        <div className="flex justify-between text-center py-3">
+        <div className="flex justify-between text-center py-3 pt-9">
           <div>
             <p className="text-purple-600 font-bold text-lg">{listingCount}+</p>
             <p className="text-gray-500 text-xs">Active Listings</p>
