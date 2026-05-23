@@ -65,13 +65,13 @@ export default function HomePage() {
   const [memberCount, setMemberCount] = useState(22)
 
   return (
-    <div className="min-h-screen bg-[#f5f3ff] pb-20">
+    <div className="min-h-screen bg-[#f5f3ff] pb-32">
       <Header />
       <TopTabs />
 
       <main className="px-4 py-4 space-y-6 pt-40">
         {/* Stats Row */}
-        <div className="flex justify-between text-center py-2">
+        <div className="flex justify-between text-center py-3 pt-9">
           <div>
             <p className="text-purple-600 font-bold text-lg">{listingCount}+</p>
             <p className="text-gray-500 text-xs">Active Listings</p>
