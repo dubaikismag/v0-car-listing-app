@@ -64,7 +64,7 @@ function FunContent() {
       <Header />
       <TopTabs />
 
-      <main className="px-4 pt-[160px] pb-4">
+      <main className="px-4 pt-[192px] pb-4">
         {/* Banner Section */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-5 text-white mb-6 shadow-md">
           <div className="flex items-center justify-between mb-2">

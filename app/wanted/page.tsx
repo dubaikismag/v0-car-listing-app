@@ -18,7 +18,7 @@ export default function WantedPage() {
       <Header />
       <TopTabs />
 
-      <main className="px-4 pt-[160px] pb-4">
+      <main className="px-4 pt-[192px] pb-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">

@@ -69,7 +69,7 @@ export default function HomePage() {
       <Header />
       <TopTabs />
 
-      <main className="px-4 pt-[160px] pb-4 space-y-6">
+      <main className="px-4 pt-[192px] pb-4 space-y-6">
         {/* Stats Row */}
         <div className="flex justify-between text-center py-3">
           <div>
