@@ -262,7 +262,7 @@ export default function FunPage() {
         if (tab === 'Fun') return
       }} />
 
-      <main className="px-4 py-4">
+      <main className="px-4 pt-[160px] pb-4">
         {/* Fun Zone Header */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">

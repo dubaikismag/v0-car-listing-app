@@ -160,7 +160,7 @@ function BrowseContent() {
       />
       <TopTabs />
 
-      <main className="px-4 py-4 pt-44">
+      <main className="px-4 pt-[160px] pb-4">
         {/* LINE 2: Dynamic Subcategory Chips */}
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
           {currentSubcategories.map((subcat) => (

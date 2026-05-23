@@ -70,6 +70,8 @@ const priceTypes = [
   { id: 'negotiable', name: 'Negotiable' },
 ]
 
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/cNifZgfLBe9s4C11qCaAw05'
+
 const MAX_IMAGES = 8
 
 export default function PostPage() {
@@ -166,6 +168,23 @@ export default function PostPage() {
     
     if (!validateForm()) return
     
+    // If paid plan selected, redirect to Stripe payment first
+    if (formData.plan !== 'free') {
+      // Store form data in localStorage so we can retrieve after payment
+      localStorage.setItem('pendingListing', JSON.stringify({
+        ...formData,
+        selectedCategoryEmoji: selectedCategoryObj?.emoji
+      }))
+      // Redirect to Stripe payment
+      window.location.href = STRIPE_PAYMENT_LINK
+      return
+    }
+    
+    // Free plan - submit directly
+    submitListing()
+  }
+
+  const submitListing = () => {
     const newListing = {
       id: Date.now().toString(),
       title: formData.title,
@@ -209,14 +228,14 @@ export default function PostPage() {
       <Header showSearch={false} />
       <TopTabs />
       
-      <div className="bg-white px-4 py-3 flex items-center gap-3 border-b border-gray-100 fixed top-[125px] left-0 right-0 z-40 w-full">
+      <div className="bg-white px-4 py-3 flex items-center gap-3 border-b border-gray-100 fixed top-[152px] left-0 right-0 z-30 w-full">
         <button onClick={() => router.back()} className="p-2 -ml-2">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <h1 className="text-lg font-bold text-gray-900">Post Your Ad</h1>
       </div>
 
-      <main className="px-4 py-4 pt-40">
+      <main className="px-4 pt-[210px] pb-4">
         <div className="flex items-center gap-3 mb-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
           <span className="text-3xl">📝</span>
           <div>
