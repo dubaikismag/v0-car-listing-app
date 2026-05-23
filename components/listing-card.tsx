@@ -5,8 +5,22 @@ import Link from 'next/link'
 import { type Listing, useAppStore } from '@/lib/store'
 import { Heart, MapPin, Check, MessageCircle, Phone, Share2, X } from 'lucide-react'
 
+// Extended listing type to support both store and database formats
+interface ExtendedListing extends Partial<Listing> {
+  id: string
+  title: string
+  price: number
+  location: string
+  emoji?: string
+  // Database format fields
+  image_urls?: string[]
+  price_type?: 'fixed' | 'monthly' | 'yearly' | 'kg'
+  featured?: boolean
+  created_at?: string
+}
+
 interface ListingCardProps {
-  listing: Listing
+  listing: ExtendedListing
   variant?: 'grid' | 'horizontal'
 }
 
@@ -14,6 +28,16 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
   const { savedAds, toggleSavedAd, likedAds, toggleLikedAd, shareListing } = useAppStore()
   const isSaved = savedAds.includes(listing.id)
   const isLiked = likedAds.includes(listing.id)
+
+  // Get price type from either format
+  const priceType = listing.priceType || listing.price_type
+
+  // Get images from either format
+  const images = listing.images || listing.image_urls || []
+
+  // Get whatsapp/phone (with fallbacks)
+  const whatsapp = listing.whatsapp || listing.phone || ''
+  const phone = listing.phone || listing.whatsapp || ''
 
   const formatPrice = (price: number, priceType?: string) => {
     const formatted = price.toLocaleString()
@@ -23,17 +47,37 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
     return `AED ${formatted}`
   }
 
+  // Format time ago from created_at date
+  const getTimeAgo = () => {
+    if (listing.timeAgo) return listing.timeAgo
+    if (!listing.created_at) return ''
+    
+    const created = new Date(listing.created_at)
+    const now = new Date()
+    const diffMs = now.getTime() - created.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return created.toLocaleDateString()
+  }
+
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    const message = encodeURIComponent(`Hi, I'm interested in: ${listing.title} - ${formatPrice(listing.price, listing.priceType)}`)
-    window.open(`https://wa.me/${listing.whatsapp.replace(/[^0-9]/g, '')}?text=${message}`, '_blank')
+    if (!whatsapp) return
+    const message = encodeURIComponent(`Hi, I'm interested in: ${listing.title} - ${formatPrice(listing.price, priceType)}`)
+    window.open(`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}?text=${message}`, '_blank')
   }
 
   const handleCall = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    window.location.href = `tel:${listing.phone}`
+    if (!phone) return
+    window.location.href = `tel:${phone}`
   }
 
   const handleShare = async (e: React.MouseEvent) => {
@@ -44,7 +88,7 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
       try {
         await navigator.share({
           title: listing.title,
-          text: `Check out: ${listing.title} - ${formatPrice(listing.price, listing.priceType)}`,
+          text: `Check out: ${listing.title} - ${formatPrice(listing.price, priceType)}`,
           url: window.location.origin + `/listing/${listing.id}`
         })
       } catch {
@@ -79,7 +123,9 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
   }
 
   // Check if listing is premium/featured for special animation
-  const isPremium = listing.badge === 'HOT' || listing.featured || listing.vip
+  const isPremium = listing.badge === 'HOT' || listing.featured || listing.isFeatured || listing.vip
+
+  const timeAgo = getTimeAgo()
 
   const bgColors: Record<string, string> = {
     HOT: 'bg-amber-50',
@@ -132,7 +178,7 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
           {/* Content - Flex grow */}
           <div className="p-2 flex-1 flex flex-col justify-between">
             <div>
-              <p className="text-purple-600 font-bold text-sm">{formatPrice(listing.price, listing.priceType)}</p>
+              <p className="text-purple-600 font-bold text-sm">{formatPrice(listing.price, priceType)}</p>
               <p className="text-gray-900 font-medium text-xs truncate">{listing.title}</p>
               <div className="flex items-center gap-1 mt-0.5">
                 <MapPin className="w-2.5 h-2.5 text-red-500 flex-shrink-0" />
@@ -146,9 +192,12 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
                   Verified
                 </span>
               )}
-              {listing.timeAgo && (
-                <span className="text-gray-400 text-[10px]">{listing.timeAgo}</span>
-              )}
+            {listing.timeAgo && (
+              <span className="text-gray-400 text-[10px]">{listing.timeAgo}</span>
+            )}
+            {!listing.timeAgo && timeAgo && (
+              <span className="text-gray-400 text-[10px]">{timeAgo}</span>
+            )}
             </div>
           </div>
         </div>
@@ -187,7 +236,7 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
         
         {/* Content - Flex grow */}
         <div className="p-2.5 flex-1 flex flex-col">
-          <p className="text-purple-600 font-bold text-base">{formatPrice(listing.price, listing.priceType)}</p>
+          <p className="text-purple-600 font-bold text-base">{formatPrice(listing.price, priceType)}</p>
           <p className="text-gray-900 font-medium text-xs truncate">{listing.title}</p>
           <div className="flex items-center gap-1 mt-0.5">
             <MapPin className="w-3 h-3 text-red-500 flex-shrink-0" />
@@ -207,8 +256,8 @@ export function ListingCard({ listing, variant = 'grid' }: ListingCardProps) {
                 {tag}
               </span>
             ))}
-            {listing.timeAgo && (
-              <span className="text-gray-400 text-[10px] ml-auto">{listing.timeAgo}</span>
+            {(listing.timeAgo || timeAgo) && (
+              <span className="text-gray-400 text-[10px] ml-auto">{listing.timeAgo || timeAgo}</span>
             )}
           </div>
 

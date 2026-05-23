@@ -2,19 +2,19 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
 import { AuthModal } from '@/components/auth-modal'
 import { useAppStore } from '@/lib/store'
+import { useListings } from '@/lib/hooks/use-listings'
 import { ListingCard } from '@/components/listing-card'
-import { Filter, X, MapPin, Check } from 'lucide-react'
+import { Filter, X, MapPin, Check, Loader2 } from 'lucide-react'
 
 // Main categories for Line 1
 const mainCategories = [
   { id: 'Jobs', name: 'Jobs', emoji: '💼' },
-  { id: 'Rooms', name: 'Rooms', emoji: '🏠' },
+  { id: 'Rooms', name: 'Real Estate', emoji: '🏠' },
   { id: 'Cars', name: 'Cars', emoji: '🚗' },
   { id: 'Services', name: 'Services', emoji: '🛠' },
   { id: 'Buy & Sell', name: 'Buy & Sell', emoji: '🛒' },
@@ -33,6 +33,17 @@ const subcategoryMap: Record<string, string[]> = {
   'Community': ['All', 'Events', 'Meetups', 'Travel', 'Classes', 'Cricket', 'Food', 'Business', 'Local Groups', 'Volunteers', 'Other'],
 }
 
+// Map URL categories to database categories
+const categoryMapping: Record<string, string> = {
+  'Jobs': 'Jobs',
+  'Rooms': 'Real Estate',
+  'Cars': 'Cars',
+  'Services': 'Services',
+  'Buy & Sell': 'Buy & Sell',
+  'Wanted': 'Wanted',
+  'Community': 'Community',
+}
+
 // Smart filter chips (Line 3)
 const smartFilters = [
   { id: 'Newest', name: 'Newest', emoji: '🕒' },
@@ -49,7 +60,7 @@ const smartFilters = [
 
 function BrowseContent() {
   const searchParams = useSearchParams()
-  const { getFilteredListings, searchQuery, selectedLocation, setSearchQuery, listings } = useAppStore()
+  const { searchQuery, selectedLocation, setSearchQuery, listings: localListings } = useAppStore()
   
   const initialCategory = searchParams.get('category') || 'Jobs'
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
@@ -57,6 +68,18 @@ function BrowseContent() {
   const [selectedFilter, setSelectedFilter] = useState('Newest')
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [localSearch, setLocalSearch] = useState(searchQuery)
+
+  // Get the database category name
+  const dbCategory = categoryMapping[selectedCategory] || selectedCategory
+
+  // Fetch listings from database with realtime updates
+  const { listings: dbListings, isLoading, error } = useListings({
+    category: dbCategory,
+    search: localSearch || undefined,
+  })
+
+  // Combine database listings with local sample listings for fallback
+  const allListings = dbListings.length > 0 ? dbListings : localListings
 
   // Get subcategories for current main category
   const currentSubcategories = subcategoryMap[selectedCategory] || ['All']
@@ -79,43 +102,9 @@ function BrowseContent() {
     setSelectedSubcategory('All')
   }
 
-  // Filter listings based on category, subcategory, and filters
+  // Filter and sort listings
   const getFilteredResults = () => {
-    let results = [...listings]
-
-    // Filter by main category
-    if (selectedCategory !== 'All') {
-      results = results.filter(listing => {
-        const cat = listing.category?.toLowerCase() || ''
-        const title = listing.title?.toLowerCase() || ''
-        const desc = listing.description?.toLowerCase() || ''
-        const searchCat = selectedCategory.toLowerCase()
-        
-        // Map categories to listing data
-        if (selectedCategory === 'Jobs') {
-          return cat.includes('job') || cat.includes('labour') || listing.badge === 'HIRE'
-        }
-        if (selectedCategory === 'Rooms') {
-          return cat.includes('property') || cat.includes('room') || title.includes('bhk') || title.includes('furnished')
-        }
-        if (selectedCategory === 'Cars') {
-          return cat.includes('vehicle') || cat.includes('car') || title.includes('toyota') || title.includes('honda')
-        }
-        if (selectedCategory === 'Services') {
-          return cat.includes('service') || cat.includes('labour') || listing.badge === 'HIRE'
-        }
-        if (selectedCategory === 'Buy & Sell') {
-          return cat.includes('electronic') || cat.includes('furniture') || cat.includes('farmland') || listing.badge === 'SALE'
-        }
-        if (selectedCategory === 'Wanted') {
-          return title.includes('wanted') || desc.includes('looking for')
-        }
-        if (selectedCategory === 'Community') {
-          return cat.includes('community') || cat.includes('group')
-        }
-        return true
-      })
-    }
+    let results = [...allListings]
 
     // Filter by subcategory
     if (selectedSubcategory !== 'All') {
@@ -123,19 +112,9 @@ function BrowseContent() {
         const title = listing.title?.toLowerCase() || ''
         const desc = listing.description?.toLowerCase() || ''
         const subcat = selectedSubcategory.toLowerCase()
-        return title.includes(subcat) || desc.includes(subcat) || listing.subcategory?.toLowerCase().includes(subcat)
+        const listingSubcat = 'subcategory' in listing ? (listing.subcategory as string)?.toLowerCase() : ''
+        return title.includes(subcat) || desc.includes(subcat) || listingSubcat?.includes(subcat)
       })
-    }
-
-    // Filter by search query
-    if (localSearch) {
-      const query = localSearch.toLowerCase()
-      results = results.filter(listing => 
-        listing.title?.toLowerCase().includes(query) ||
-        listing.description?.toLowerCase().includes(query) ||
-        listing.location?.toLowerCase().includes(query) ||
-        listing.category?.toLowerCase().includes(query)
-      )
     }
 
     // Apply smart filters
@@ -143,22 +122,29 @@ function BrowseContent() {
       results = results.filter(listing => listing.verified)
     }
     if (selectedFilter === 'Featured') {
-      results = results.filter(listing => listing.isFeatured || listing.badge === 'HOT')
+      results = results.filter(listing => {
+        const isFeatured = 'featured' in listing ? listing.featured : ('isFeatured' in listing ? listing.isFeatured : false)
+        const badge = 'badge' in listing ? listing.badge : undefined
+        return isFeatured || badge === 'HOT'
+      })
     }
     if (selectedFilter === 'Near me') {
       results = results.filter(listing => listing.location?.includes(selectedLocation.split(',')[0]))
     }
     if (selectedFilter === 'Urgent') {
-      results = results.filter(listing => listing.badge === 'HOT' || listing.badge === 'NEW')
+      results = results.filter(listing => {
+        const badge = 'badge' in listing ? listing.badge : undefined
+        return badge === 'HOT' || badge === 'NEW'
+      })
     }
-    if (selectedFilter === 'Today') {
-      results = results.filter(listing => listing.timeAgo?.includes('h') || listing.timeAgo?.includes('m'))
+    if (selectedFilter === 'With Photos') {
+      results = results.filter(listing => {
+        const images = 'image_urls' in listing ? listing.image_urls : ('images' in listing ? listing.images : [])
+        return images && images.length > 0
+      })
     }
     if (selectedFilter === 'Price') {
       results = results.sort((a, b) => (a.price || 0) - (b.price || 0))
-    }
-    if (selectedFilter === 'Newest') {
-      // Already sorted by newest in store
     }
 
     return results
@@ -174,7 +160,7 @@ function BrowseContent() {
       />
       <TopTabs />
 
-      <main className="px-4 py-4">
+      <main className="px-4 py-4 pt-44">
         {/* LINE 2: Dynamic Subcategory Chips */}
         <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-3 pb-1">
           {currentSubcategories.map((subcat) => (
@@ -212,7 +198,9 @@ function BrowseContent() {
 
         {/* Results Count */}
         <div className="flex items-center justify-between mb-3">
-          <p className="text-gray-500 text-sm">{filteredListings.length} listings found</p>
+          <p className="text-gray-500 text-sm">
+            {isLoading ? 'Loading...' : `${filteredListings.length} listings found`}
+          </p>
           {localSearch && (
             <button 
               onClick={() => { setLocalSearch(''); setSearchQuery(''); }}
@@ -231,14 +219,33 @@ function BrowseContent() {
           </div>
         )}
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <span className="text-5xl block mb-4">⚠️</span>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Error loading listings</h3>
+            <p className="text-gray-500 text-sm mb-4">Please try again later</p>
+          </div>
+        )}
+
         {/* Listings Grid */}
-        {filteredListings.length > 0 ? (
+        {!isLoading && !error && filteredListings.length > 0 && (
           <div className="grid grid-cols-2 gap-3">
             {filteredListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard key={listing.id} listing={listing as any} />
             ))}
           </div>
-        ) : (
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && filteredListings.length === 0 && (
           <div className="text-center py-12">
             <span className="text-5xl block mb-4">🔍</span>
             <h3 className="text-lg font-bold text-gray-900 mb-2">No listings found</h3>
@@ -330,7 +337,7 @@ export default function BrowsePage() {
     <Suspense fallback={
       <div className="min-h-screen bg-[#f5f3ff] flex items-center justify-center">
         <div className="text-center">
-          <span className="text-4xl animate-pulse">🔍</span>
+          <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
           <p className="text-gray-500 mt-2">Loading...</p>
         </div>
       </div>
