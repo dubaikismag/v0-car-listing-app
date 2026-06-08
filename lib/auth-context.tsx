@@ -145,19 +145,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await response.json()
+      console.log('[v0] Login response status:', response.status)
 
+      // Check if response is ok first
       if (!response.ok) {
-        console.error('[v0] Login error:', data.error)
-        return { error: data.error || 'Failed to sign in. Please check your credentials.' }
+        let errorMessage = 'Failed to sign in'
+        try {
+          const data = await response.json()
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        console.error('[v0] Login error:', errorMessage)
+        return { error: errorMessage }
       }
 
+      const data = await response.json()
       console.log('[v0] Login successful:', data.user?.id)
+      
       closeAuthModal()
       return {}
     } catch (err) {
       console.error('[v0] Login exception:', err)
-      return { error: 'Network error. Please check your connection and try again.' }
+      const errorMsg = err instanceof Error ? err.message : 'Network error'
+      return { error: `Connection error: ${errorMsg}. Please check your internet and try again.` }
     }
   }, [closeAuthModal])
 

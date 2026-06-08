@@ -6,11 +6,29 @@ export function createClient() {
 
   if (!supabaseUrl || !supabaseKey) {
     console.warn('[v0] Supabase credentials not available')
-    // Return a stub for build time
+    // Return a complete stub for build time and runtime without credentials
     return {
-      auth: { getUser: async () => ({ data: { user: null }, error: null }) },
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        signInWithPassword: async () => ({ 
+          data: { user: null, session: null },
+          error: { message: 'Supabase not configured' }
+        }),
+        signUp: async () => ({ 
+          data: { user: null, session: null },
+          error: { message: 'Supabase not configured' }
+        }),
+        signOut: async () => ({ error: null }),
+        onAuthStateChange: () => ({ 
+          data: { subscription: { unsubscribe: () => {} } },
+          error: null
+        }),
+      },
       from: () => ({
         select: () => ({ eq: () => ({ order: () => ({ data: [] }) }) }),
+        insert: () => ({ data: null, error: null }),
+        update: () => ({ data: null, error: null }),
+        delete: () => ({ data: null, error: null }),
       }),
     } as any
   }
