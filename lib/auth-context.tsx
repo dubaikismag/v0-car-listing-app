@@ -165,6 +165,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error.message }
     }
 
+    // Create profile after signup
+    try {
+      await fetch('/api/auth/profile', { method: 'POST' })
+    } catch (err) {
+      console.error('[v0] Profile creation failed:', err)
+    }
+
     closeAuthModal()
     return {}
   }, [supabase, closeAuthModal])
