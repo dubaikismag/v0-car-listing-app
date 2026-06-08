@@ -135,18 +135,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+    try {
+      console.log('[v0] Attempting login with email:', email)
+      
+      // Use API route to avoid CORS issues
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-    if (error) {
-      return { error: error.message }
+      console.log('[v0] Login response status:', response.status)
+
+      // Check if response is ok first
+      if (!response.ok) {
+        let errorMessage = 'Failed to sign in'
+        try {
+          const data = await response.json()
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        console.error('[v0] Login error:', errorMessage)
+        return { error: errorMessage }
+      }
+
+      const data = await response.json()
+      console.log('[v0] Login successful:', data.user?.id)
+      
+      closeAuthModal()
+      return {}
+    } catch (err) {
+      console.error('[v0] Login exception:', err)
+      const errorMsg = err instanceof Error ? err.message : 'Network error'
+      return { error: `Connection error: ${errorMsg}. Please check your internet and try again.` }
     }
-
-    closeAuthModal()
-    return {}
-  }, [supabase, closeAuthModal])
+  }, [closeAuthModal])
 
   const signUp = useCallback(async (email: string, password: string, name: string) => {
     const { error } = await supabase.auth.signUp({
@@ -163,6 +187,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       return { error: error.message }
+    }
+
+    // Create profile after signup
+    try {
+      await fetch('/api/auth/profile', { method: 'POST' })
+    } catch (err) {
+      console.error('[v0] Profile creation failed:', err)
     }
 
     closeAuthModal()
