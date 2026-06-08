@@ -179,12 +179,12 @@ function BrowseContent() {
         </div>
 
         {/* LINE 3: Smart Filter Chips */}
-        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
+        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
           {smartFilters.map((filter) => (
             <button
               key={filter.id}
               onClick={() => setSelectedFilter(filter.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 selectedFilter === filter.id
                   ? 'bg-amber-100/80 text-amber-700 border border-amber-300/60 backdrop-blur-sm shadow-sm'
                   : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'

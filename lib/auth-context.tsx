@@ -135,18 +135,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+    try {
+      console.log('[v0] Attempting login with email:', email)
+      
+      // Use API route to avoid CORS issues
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-    if (error) {
-      return { error: error.message }
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('[v0] Login error:', data.error)
+        return { error: data.error || 'Failed to sign in. Please check your credentials.' }
+      }
+
+      console.log('[v0] Login successful:', data.user?.id)
+      closeAuthModal()
+      return {}
+    } catch (err) {
+      console.error('[v0] Login exception:', err)
+      return { error: 'Network error. Please check your connection and try again.' }
     }
-
-    closeAuthModal()
-    return {}
-  }, [supabase, closeAuthModal])
+  }, [closeAuthModal])
 
   const signUp = useCallback(async (email: string, password: string, name: string) => {
     const { error } = await supabase.auth.signUp({
