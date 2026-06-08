@@ -50,44 +50,15 @@ export default function MorePage() {
     setShowEditProfile(false)
   }
 
-  // Account Section
-  const accountItems = [
-    { emoji: '👤', label: 'Profile', href: '/profile' },
-    { emoji: '📢', label: 'My Ads', href: '/my-listings' },
-    { emoji: '❤️', label: 'Saved Ads', href: '/saved' },
+  const menuItems = [
+    { emoji: '📋', label: 'My Listings', href: '/my-listings' },
+    { emoji: '📌', label: 'Saved Ads', href: '/saved' },
     { emoji: '💬', label: 'Messages', href: '/messages' },
-    { emoji: '💳', label: 'Wallet / Credits', href: '/rewards' },
-    { emoji: '⭐', label: 'My Boosted Ads', href: '/boosted' },
-  ]
-
-  // Extra Categories
-  const extraCategories = [
-    { emoji: '📱', label: 'Electronics', href: '/browse?category=Buy & Sell' },
-    { emoji: '🛋', label: 'Furniture', href: '/browse?category=Buy & Sell' },
-    { emoji: '🏖', label: 'Vacation Rentals', href: '/browse?category=Rooms' },
-    { emoji: '💼', label: 'Business Services', href: '/browse?category=Services' },
-    { emoji: '🐾', label: 'Pets', href: '/browse?category=Buy & Sell' },
-    { emoji: '🎓', label: 'Education', href: '/browse?category=Services' },
-  ]
-
-  // Rewards & Community
-  const rewardsItems = [
-    { emoji: '🎁', label: 'Daily Rewards', href: '/fun' },
-    { emoji: '🏆', label: 'Leaderboard', href: '/fun' },
-    { emoji: '🤝', label: 'Refer & Earn', href: '/referral' },
-    { emoji: '🎯', label: 'Challenges', href: '/fun' },
-  ]
-
-  // Settings & Support
-  const settingsItems = [
-    { emoji: '🌐', label: 'Language', href: '/language' },
-    { emoji: '🌙', label: 'Dark Mode', href: '#', isToggle: true },
-    { emoji: '🔔', label: 'Notifications', href: '/notifications' },
-    { emoji: '⚙', label: 'Settings', href: '/settings' },
-    { emoji: '❓', label: 'Help Center', href: '/help' },
-    { emoji: '📞', label: 'Contact Us', href: '/contact' },
-    { emoji: '🛡', label: 'Safety Tips', href: '/safety' },
+    { emoji: '🪙', label: 'Coins & Rewards', href: '/rewards' },
+    { emoji: '🎮', label: 'Fun Zone', href: '/fun' },
+    { emoji: '🌍', label: 'My Communities', href: '/communities' },
     ...(isAdmin() ? [{ emoji: '⚙️', label: 'Admin Panel', badge: 'ADMIN', href: '/admin' }] : []),
+    { emoji: '🌐', label: 'Language / لغة', href: '/language' },
     { emoji: '🚪', label: 'Log Out', href: '#', isLogout: true },
   ]
 
@@ -111,7 +82,7 @@ export default function MorePage() {
       <Header />
       <TopTabs />
 
-      <main className="pt-[192px]">
+      <main>
         {/* Profile Header */}
         <div className="gradient-purple px-4 py-8 text-center relative">
           {/* Edit Profile Button */}
@@ -178,92 +149,32 @@ export default function MorePage() {
           </div>
         </div>
 
-        {/* Account Section */}
-        <div className="px-4 py-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Account</h3>
-          <div className="space-y-2">
-            {accountItems.map((item, i) => (
-              <Link
-                key={i}
-                href={item.href}
-                className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-100"
-              >
-                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                  <span className="text-lg">{item.emoji}</span>
-                </div>
-                <span className="flex-1 font-medium text-gray-900 text-sm">{item.label}</span>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Rewards & Community */}
-        <div className="px-4 pb-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Rewards & Community</h3>
-          <div className="space-y-2">
-            {rewardsItems.map((item, i) => (
-              <Link
-                key={i}
-                href={item.href}
-                className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-100"
-              >
-                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                  <span className="text-lg">{item.emoji}</span>
-                </div>
-                <span className="flex-1 font-medium text-gray-900 text-sm">{item.label}</span>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Extra Categories */}
-        <div className="px-4 pb-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Extra Categories</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {extraCategories.map((item, i) => (
-              <Link
-                key={i}
-                href={item.href}
-                className="flex flex-col items-center gap-1 p-3 bg-white rounded-xl border border-gray-100"
-              >
-                <span className="text-2xl">{item.emoji}</span>
-                <span className="text-xs font-medium text-gray-700 text-center">{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Settings & Support */}
-        <div className="px-4 pb-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-1">Settings & Support</h3>
-          <div className="space-y-2">
-            {settingsItems.map((item, i) => (
-              <Link
-                key={i}
-                href={item.href}
-                onClick={(e) => {
-                  if (item.isLogout) {
-                    e.preventDefault()
-                    setUser(null)
-                  }
-                }}
-                className="flex items-center gap-4 p-3 bg-white rounded-xl border border-gray-100"
-              >
-                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                  <span className="text-lg">{item.emoji}</span>
-                </div>
-                <span className="flex-1 font-medium text-gray-900 text-sm">{item.label}</span>
-                {item.badge && (
-                  <span className="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded">
-                    {item.badge}
-                  </span>
-                )}
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </Link>
-            ))}
-          </div>
+        {/* Menu Items */}
+        <div className="px-4 py-4 space-y-2">
+          {menuItems.map((item, i) => (
+            <Link
+              key={i}
+              href={item.href}
+              onClick={(e) => {
+                if (item.isLogout) {
+                  e.preventDefault()
+                  setUser(null)
+                }
+              }}
+              className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100"
+            >
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <span className="text-xl">{item.emoji}</span>
+              </div>
+              <span className="flex-1 font-medium text-gray-900">{item.label}</span>
+              {item.badge && (
+                <span className="px-2 py-0.5 bg-purple-600 text-white text-xs font-bold rounded">
+                  {item.badge}
+                </span>
+              )}
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </Link>
+          ))}
         </div>
 
         {/* Go VIP Button */}

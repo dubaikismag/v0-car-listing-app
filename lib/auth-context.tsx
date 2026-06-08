@@ -1,22 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
-
-export interface User {
-  id: string
-  email?: string
-  phone?: string
-  name: string
-  verified: boolean
-  profile_picture_url?: string
-  location?: string
-  active_ads?: number
-  rating?: number
-  sold?: number
-  member_since?: string
-}
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { useAppStore } from './store'
+import type { User } from './store'
 
 interface AuthContextType {
   isAuthModalOpen: boolean
@@ -28,13 +14,9 @@ interface AuthContextType {
   setAuthMethod: (method: 'phone' | 'email' | null) => void
   authValue: string
   setAuthValue: (value: string) => void
-  login: (email: string, password: string) => Promise<{ error?: string }>
-  signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>
-  logout: () => Promise<void>
+  login: (name: string) => void
+  logout: () => void
   user: User | null
-  supabaseUser: SupabaseUser | null
-  isLoading: boolean
-  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -44,81 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authStep, setAuthStep] = useState<'input' | 'otp' | 'name'>('input')
   const [authMethod, setAuthMethod] = useState<'phone' | 'email' | null>(null)
   const [authValue, setAuthValue] = useState('')
-  const [user, setUser] = useState<User | null>(null)
-  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  const supabase = createClient()
-
-  const fetchUserProfile = useCallback(async (supabaseUser: SupabaseUser) => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', supabaseUser.id)
-      .single()
-
-    if (profile) {
-      setUser({
-        id: supabaseUser.id,
-        email: supabaseUser.email,
-        phone: supabaseUser.phone,
-        name: profile.name || supabaseUser.email?.split('@')[0] || 'User',
-        verified: profile.verified || false,
-        profile_picture_url: profile.profile_picture_url,
-        location: profile.location,
-        active_ads: profile.active_ads,
-        rating: profile.rating,
-        sold: profile.sold,
-        member_since: profile.member_since
-      })
-    } else {
-      setUser({
-        id: supabaseUser.id,
-        email: supabaseUser.email,
-        phone: supabaseUser.phone,
-        name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-        verified: false
-      })
-    }
-  }, [supabase])
-
-  const refreshUser = useCallback(async () => {
-    const { data: { user: currentUser } } = await supabase.auth.getUser()
-    if (currentUser) {
-      setSupabaseUser(currentUser)
-      await fetchUserProfile(currentUser)
-    }
-  }, [supabase, fetchUserProfile])
-
-  useEffect(() => {
-    const initAuth = async () => {
-      setIsLoading(true)
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-      
-      if (currentUser) {
-        setSupabaseUser(currentUser)
-        await fetchUserProfile(currentUser)
-      }
-      setIsLoading(false)
-    }
-
-    initAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setSupabaseUser(session.user)
-        await fetchUserProfile(session.user)
-      } else {
-        setSupabaseUser(null)
-        setUser(null)
-      }
-      setIsLoading(false)
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase, fetchUserProfile])
+  
+  const { user, setUser } = useAppStore()
 
   const openAuthModal = useCallback(() => {
     setIsAuthModalOpen(true)
@@ -134,46 +43,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthValue('')
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-
-    if (error) {
-      return { error: error.message }
+  const login = useCallback((name: string) => {
+    const newUser: User = {
+      id: Math.random().toString(36).substring(7),
+      phone: authMethod === 'phone' ? authValue : undefined,
+      email: authMethod === 'email' ? authValue : undefined,
+      name,
+      verified: true
     }
-
+    setUser(newUser)
     closeAuthModal()
-    return {}
-  }, [supabase, closeAuthModal])
+  }, [authMethod, authValue, setUser, closeAuthModal])
 
-  const signUp = useCallback(async (email: string, password: string, name: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? 
-          `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
-        data: {
-          name
-        }
-      }
-    })
-
-    if (error) {
-      return { error: error.message }
-    }
-
-    closeAuthModal()
-    return {}
-  }, [supabase, closeAuthModal])
-
-  const logout = useCallback(async () => {
-    await supabase.auth.signOut()
+  const logout = useCallback(() => {
     setUser(null)
-    setSupabaseUser(null)
-  }, [supabase])
+  }, [setUser])
 
   return (
     <AuthContext.Provider
@@ -188,12 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authValue,
         setAuthValue,
         login,
-        signUp,
         logout,
-        user,
-        supabaseUser,
-        isLoading,
-        refreshUser
+        user
       }}
     >
       {children}

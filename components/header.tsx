@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Search, User, ChevronDown, X, Bell } from 'lucide-react'
 import { useAppStore, uaeLocations } from '@/lib/store'
-import { useAuth } from '@/lib/auth-context'
 
 interface HeaderProps {
   showSearch?: boolean
@@ -12,13 +11,11 @@ interface HeaderProps {
 }
 
 export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
-  const { selectedLocation, setSelectedLocation, searchQuery, setSearchQuery, isAdmin, notifications, markNotificationRead, clearNotifications } = useAppStore()
-  const { user, openAuthModal } = useAuth()
+  const { setShowAuthModal, isAuthenticated, user, selectedLocation, setSelectedLocation, searchQuery, setSearchQuery, isAdmin, notifications, markNotificationRead, clearNotifications } = useAppStore()
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
 
   const unreadCount = notifications.filter(n => !n.read).length
-  const isAuthenticated = !!user
 
   const handleSearch = (value: string) => {
     setSearchQuery(value)
@@ -26,7 +23,7 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
   }
 
   return (
-    <div className="gradient-header fixed top-0 left-0 right-0 z-50 w-full">
+    <div className="gradient-header sticky top-0 z-50">
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 py-2.5">
         {/* Logo */}
@@ -90,11 +87,11 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
 
           {/* User button with name or icon */}
           <button 
-            onClick={() => !isAuthenticated && openAuthModal()}
+            onClick={() => !isAuthenticated && setShowAuthModal(true)}
             className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center overflow-hidden"
           >
-            {user?.profile_picture_url ? (
-              <img src={user.profile_picture_url} alt={user.name} className="w-full h-full object-cover" />
+            {user?.profilePicture ? (
+              <img src={user.profilePicture} alt={user.name} className="w-full h-full object-cover" />
             ) : (
               <User className="w-4 h-4 text-white" />
             )}
@@ -144,7 +141,7 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
 
       {/* Location Picker Dropdown */}
       {showLocationPicker && (
-        <div className="absolute top-full left-4 right-4 bg-white shadow-lg rounded-xl max-h-64 overflow-y-auto z-50">
+        <div className="absolute top-full left-0 right-0 bg-white shadow-lg max-h-64 overflow-y-auto z-50">
           <div className="p-2">
             <button
               onClick={() => {
@@ -179,18 +176,8 @@ export function Header({ showSearch = true, onSearch, onFilter }: HeaderProps) {
             <div className="flex items-center gap-2">
               {notifications.length > 0 && (
                 <button 
-                  onClick={() => {
-                    notifications.forEach(n => markNotificationRead(n.id))
-                  }}
-                  className="text-xs text-purple-600 hover:underline"
-                >
-                  Mark all as read
-                </button>
-              )}
-              {notifications.length > 0 && (
-                <button 
                   onClick={clearNotifications}
-                  className="text-xs text-gray-400 hover:text-gray-600"
+                  className="text-xs text-purple-600 hover:underline"
                 >
                   Clear all
                 </button>

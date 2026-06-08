@@ -1,7 +1,6 @@
 'use client'
 
 import { Geist, Geist_Mono } from 'next/font/google'
-import { AuthProvider } from '@/lib/auth-context'
 import './globals.css'
 
 const geist = Geist({ subsets: ["latin"], variable: '--font-geist' })
@@ -22,9 +21,7 @@ export default function RootLayout({
         <link rel="icon" href="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/apple-touch-icon-tv4jcor3qKUge0g7yZk72wwXar34V7.png" />
       </head>
       <body className="font-sans antialiased bg-[#f8f7fc]">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        {children}
       </body>
     </html>
   )

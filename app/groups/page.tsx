@@ -1,142 +1,264 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useState, Suspense } from 'react'
+import { useState } from 'react'
 import { Header } from '@/components/header'
 import { TopTabs } from '@/components/top-tabs'
 import { BottomNavigation } from '@/components/bottom-navigation'
-import { useAppStore } from '@/lib/store'
-import { Gamepad2, Trophy, Users, Zap, Play, Star } from 'lucide-react'
+import { AuthModal } from '@/components/auth-modal'
+import { useAppStore, countryFilters } from '@/lib/store'
+import { X, ArrowLeft, Users } from 'lucide-react'
 
-// 1. Clean Main Entry Point with Suspense Boundary Fix
-export default function FunPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#f5f3ff] flex items-center justify-center">
-        <p className="text-purple-600 font-medium">Loading fun zone...</p>
-      </div>
-    }>
-      <FunContent />
-    </Suspense>
+export default function GroupsPage() {
+  const { communityGroups, joinGroup, requestCommunity, isAuthenticated, setShowAuthModal, pendingCommunities, isAdmin, approveCommunity } = useAppStore()
+  const [selectedCountry, setSelectedCountry] = useState('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showPendingModal, setShowPendingModal] = useState(false)
+  const [newGroup, setNewGroup] = useState({
+    name: '',
+    country: 'India',
+    flag: '🇮🇳',
+    activity: ''
+  })
+
+  const filteredGroups = communityGroups.filter(g => 
+    selectedCountry === 'all' || g.country.toLowerCase() === selectedCountry
   )
-}
 
-// 2. The Actual Page Component Logic
-function FunContent() {
-  const store = useAppStore()
-  const isAuthenticated = store?.isAuthenticated || false
-  const user = store?.user
-
-  // Sample static game items matching your clean mobile-app style layout
-  const games = [
-    {
-      id: 'g1',
-      title: 'Spin & Win',
-      description: 'Spin the daily wheel to win points and active tokens.',
-      icon: '🎡',
-      category: 'Luck',
-      plays: '14.2k',
-      rating: 4.8
-    },
-    {
-      id: 'g2',
-      title: 'Trivia Challenge',
-      description: 'Test your knowledge about cars, communities, and tech.',
-      icon: '🧠',
-      category: 'Quiz',
-      plays: '9.5k',
-      rating: 4.6
-    },
-    {
-      id: 'g3',
-      title: 'Scratch Card',
-      description: 'Reveal matching cards to claim exclusive community rewards.',
-      icon: '🎫',
-      category: 'Rewards',
-      plays: '22.1k',
-      rating: 4.9
+  const handleCreateGroup = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true)
+      return
     }
-  ]
+    
+    if (!newGroup.name.trim() || !newGroup.activity.trim()) {
+      alert('Please fill in all fields')
+      return
+    }
+
+    requestCommunity({
+      name: newGroup.name,
+      members: 1,
+      activity: newGroup.activity,
+      country: newGroup.country,
+      flag: newGroup.flag,
+      joined: true
+    })
+
+    setShowCreateModal(false)
+    setNewGroup({ name: '', country: 'India', flag: '🇮🇳', activity: '' })
+    alert('Your community request has been submitted for admin approval!')
+  }
+
+  const handleCountryChange = (countryId: string) => {
+    const country = countryFilters.find(c => c.id === countryId)
+    if (country) {
+      setNewGroup(prev => ({
+        ...prev,
+        country: country.name,
+        flag: country.flag
+      }))
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-20">
       <Header />
       <TopTabs />
 
-      <main className="px-4 pt-[192px] pb-4">
-        {/* Banner Section */}
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-5 text-white mb-6 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <Gamepad2 className="w-6 h-6" /> Fun Zone
-            </h2>
-            <span className="bg-white/20 text-xs px-2 py-1 rounded-full font-medium backdrop-blur-sm">
-              ⚡ Live Rewards
-            </span>
-          </div>
-          <p className="text-purple-100 text-sm mb-4">
-            Play quick mini-games, compete with other users, and collect points.
-          </p>
-          <div className="bg-white/10 rounded-xl p-3 flex justify-between items-center backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-sm">
-              <Trophy className="w-4 h-4 text-amber-300" />
-              <span>Your Points: <strong>{user?.points || 0} pts</strong></span>
-            </div>
-            <button className="text-xs bg-white text-purple-600 font-bold px-3 py-1.5 rounded-lg hover:bg-purple-50 transition-colors">
-              Leaderboard
+      <main className="px-4 py-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span>🌍</span> Community Groups
+          </h2>
+          <div className="flex items-center gap-2">
+            {isAdmin() && pendingCommunities.length > 0 && (
+              <button 
+                onClick={() => setShowPendingModal(true)}
+                className="text-amber-600 font-semibold text-sm flex items-center gap-1"
+              >
+                ⏳ {pendingCommunities.length} Pending
+              </button>
+            )}
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="text-purple-600 font-semibold text-sm"
+            >
+              + Create
             </button>
           </div>
         </div>
+        <p className="text-gray-500 text-sm mb-4">Connect with your community - share jobs, find help, chat free</p>
 
-        {/* Section Title */}
-        <h3 className="font-bold text-gray-900 text-lg mb-3 flex items-center gap-2">
-          <span>🎮</span> Popular Mini-Games
-        </h3>
-
-        {/* Games List Container */}
-        <div className="space-y-4">
-          {games.map((game) => (
-            <div 
-              key={game.id} 
-              className="bg-white rounded-2xl p-4 border border-purple-100 shadow-sm flex gap-4 hover:border-purple-300 transition-all"
+        {/* Country Filters */}
+        <div className="flex overflow-x-auto hide-scrollbar gap-2 mb-4 pb-1">
+          {countryFilters.map((country) => (
+            <button
+              key={country.id}
+              onClick={() => setSelectedCountry(country.id)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                selectedCountry === country.id
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white border border-gray-200 text-gray-700'
+              }`}
             >
-              <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center text-3xl shadow-inner shrink-0">
-                {game.icon}
-              </div>
+              <span>{country.flag}</span>
+              <span>{country.name}</span>
+            </button>
+          ))}
+        </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
-                    {game.category}
-                  </span>
-                  <div className="flex items-center text-xs text-amber-500 gap-0.5 ml-auto">
-                    <Star className="w-3 h-3 fill-amber-500" />
-                    <span className="font-semibold text-gray-700">{game.rating}</span>
-                  </div>
-                </div>
-                
-                <h4 className="font-bold text-gray-900 text-base mb-1 truncate">{game.title}</h4>
-                <p className="text-gray-500 text-xs line-clamp-2 mb-3 leading-relaxed">{game.description}</p>
-                
-                <div className="flex items-center justify-between pt-1 border-t border-gray-50">
-                  <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                    <Users className="w-3 h-3" /> {game.plays} plays today
-                  </span>
-                  <button 
-                    onClick={() => alert(`Launching ${game.title}! Let's play!`)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-4 py-1.5 rounded-xl flex items-center gap-1 shadow-sm transition-colors"
-                  >
-                    <Play className="w-3 h-3 fill-white" /> Play
-                  </button>
-                </div>
+        {/* Groups Count */}
+        <p className="text-gray-400 text-sm mb-3">{filteredGroups.length} communities found</p>
+
+        {/* Groups List */}
+        <div className="space-y-3">
+          {filteredGroups.map((group) => (
+            <div key={group.id} className="bg-white rounded-xl p-4 border border-gray-100 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center">
+                <span className="text-3xl">{group.flag}</span>
               </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900">{group.name}</h3>
+                <p className="text-gray-500 text-sm flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {group.members.toLocaleString()} members - {group.activity}
+                </p>
+              </div>
+              <button
+                onClick={() => joinGroup(group.id)}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm ${
+                  group.joined
+                    ? 'bg-purple-100 text-purple-600 border border-purple-200'
+                    : 'bg-purple-600 text-white'
+                }`}
+              >
+                {group.joined ? 'Joined' : 'Join'}
+              </button>
             </div>
           ))}
         </div>
       </main>
 
+      {/* Create Community Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+              <button onClick={() => setShowCreateModal(false)} className="p-2">
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <h2 className="text-lg font-bold text-gray-900">Create Community</h2>
+              <button onClick={() => setShowCreateModal(false)} className="p-2">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="px-5 pb-8 pt-4">
+              <p className="text-gray-500 text-sm mb-4">Your community will be reviewed by admin before being published.</p>
+
+              {/* Community Name */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Community Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Punjabis in Dubai"
+                  value={newGroup.name}
+                  onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+                  className="w-full p-4 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400"
+                />
+              </div>
+
+              {/* Country */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Country *</label>
+                <select
+                  value={countryFilters.find(c => c.name === newGroup.country)?.id || 'india'}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  className="w-full p-4 bg-white border border-gray-200 rounded-xl text-gray-900"
+                >
+                  {countryFilters.filter(c => c.id !== 'all').map((country) => (
+                    <option key={country.id} value={country.id}>{country.flag} {country.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Activity/Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Activity / Description *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Jobs & support, Cultural events"
+                  value={newGroup.activity}
+                  onChange={(e) => setNewGroup({ ...newGroup, activity: e.target.value })}
+                  className="w-full p-4 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400"
+                />
+              </div>
+
+              <button
+                onClick={handleCreateGroup}
+                className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl"
+              >
+                Submit for Approval
+              </button>
+
+              <p className="text-center text-gray-400 text-xs mt-3">Admin will review and approve within 24 hours</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Pending Communities Modal */}
+      {showPendingModal && isAdmin() && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
+          <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+              <button onClick={() => setShowPendingModal(false)} className="p-2">
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <h2 className="text-lg font-bold text-gray-900">Pending Approvals</h2>
+              <button onClick={() => setShowPendingModal(false)} className="p-2">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="px-4 py-4">
+              {pendingCommunities.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No pending communities</p>
+              ) : (
+                <div className="space-y-3">
+                  {pendingCommunities.map((group) => (
+                    <div key={group.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-2xl">{group.flag}</span>
+                        <div>
+                          <h3 className="font-bold text-gray-900">{group.name}</h3>
+                          <p className="text-gray-500 text-sm">{group.country} - {group.activity}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          approveCommunity(group.id)
+                          if (pendingCommunities.length === 1) {
+                            setShowPendingModal(false)
+                          }
+                        }}
+                        className="w-full py-3 bg-green-500 text-white font-semibold rounded-lg"
+                      >
+                        Approve Community
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomNavigation />
+      <AuthModal />
     </div>
   )
 }

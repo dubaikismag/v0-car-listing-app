@@ -9,57 +9,15 @@ import { AuthModal } from '@/components/auth-modal'
 import { useAppStore, categorySpecs, uaeLocations } from '@/lib/store'
 import { ArrowLeft, X, Info } from 'lucide-react'
 
-// Main Categories with subcategories
-const mainCategories = [
-  {
-    id: 'Cars',
-    name: 'Cars',
-    emoji: '🚗',
-    subcategories: ['New Cars', 'Used Cars', 'Car Parts', 'Car Accessories', 'Car Services'],
-    specs: ['Make', 'Model', 'Year', 'Mileage', 'Transmission', 'Fuel Type', 'Color']
-  },
-  {
-    id: 'Rooms',
-    name: 'Real Estate',
-    emoji: '🏢',
-    subcategories: ['Apartments', 'Villas', 'Offices', 'Shops', 'Bed Spaces', 'Partitions'],
-    specs: ['Bedrooms', 'Bathrooms', 'Sqft', 'Furnished/Unfurnished', 'Floor', 'Building Age']
-  },
-  {
-    id: 'Jobs',
-    name: 'Jobs',
-    emoji: '💼',
-    subcategories: ['Driving', 'Engineering', 'Healthcare', 'IT', 'Sales', 'Labour', 'Other'],
-    specs: ['Job Title', 'Experience Required', 'Salary Range', 'Employment Type', 'Qualification']
-  },
-  {
-    id: 'Services',
-    name: 'Services',
-    emoji: '🛠️',
-    subcategories: ['Plumbing', 'Electrical', 'Painting', 'AC Tech', 'Cleaning', 'Moving', 'Tutoring', 'Other'],
-    specs: ['Service Type', 'Experience', 'Availability', 'Service Area']
-  },
-  {
-    id: 'Buy & Sell',
-    name: 'Buy & Sell',
-    emoji: '🛒',
-    subcategories: ['Electronics', 'Furniture', 'Clothing', 'Books', 'Sports', 'Appliances', 'Other'],
-    specs: ['Condition', 'Brand', 'Model', 'Age']
-  },
-  {
-    id: 'Community',
-    name: 'Community',
-    emoji: '👥',
-    subcategories: ['Events', 'Groups', 'Lost & Found', 'Help Needed', 'Classifieds'],
-    specs: ['Event Type', 'Date', 'Time', 'Location Details']
-  },
-  {
-    id: 'Wanted',
-    name: 'Wanted',
-    emoji: '❤️',
-    subcategories: ['Looking for Items', 'Looking for Services', 'Looking for Housing', 'Looking for Jobs'],
-    specs: ['What You Need', 'Budget', 'Urgency', 'Timeline']
-  }
+const categories = [
+  { id: 'Vehicles', name: 'Vehicles', emoji: '🚗' },
+  { id: 'Property', name: 'Property', emoji: '🏠' },
+  { id: 'Jobs', name: 'Jobs', emoji: '💼' },
+  { id: 'Electronics', name: 'Electronics', emoji: '📱' },
+  { id: 'Furniture', name: 'Furniture', emoji: '🛋️' },
+  { id: 'Labour', name: 'Labour', emoji: '👷' },
+  { id: 'Farmland', name: 'Farmland', emoji: '🌾' },
+  { id: 'More', name: 'Services/Other', emoji: '📦' },
 ]
 
 const priceTypes = [
@@ -67,10 +25,7 @@ const priceTypes = [
   { id: 'monthly', name: 'Per Month' },
   { id: 'yearly', name: 'Per Year' },
   { id: 'kg', name: 'Per KG' },
-  { id: 'negotiable', name: 'Negotiable' },
 ]
-
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/cNifZgfLBe9s4C11qCaAw05'
 
 const MAX_IMAGES = 8
 
@@ -96,9 +51,8 @@ export default function PostPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showSuccess, setShowSuccess] = useState(false)
 
-  // Get selected category object
-  const selectedCategoryObj = mainCategories.find(c => c.id === formData.category)
-  const currentSpecs = selectedCategoryObj?.specs || []
+  // Get category-specific specs
+  const currentSpecs = formData.category ? categorySpecs[formData.category] || [] : []
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -111,6 +65,7 @@ export default function PostPage() {
       const reader = new FileReader()
       reader.onload = (e) => {
         if (e.target?.result) {
+          // Add watermark
           const img = new Image()
           img.crossOrigin = 'anonymous'
           img.onload = () => {
@@ -120,10 +75,12 @@ export default function PostPage() {
             const ctx = canvas.getContext('2d')
             if (ctx) {
               ctx.drawImage(img, 0, 0)
+              // Add watermark
               ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
               ctx.font = `bold ${Math.max(20, img.width / 20)}px Arial`
               ctx.textAlign = 'center'
               ctx.fillText('DubaiKismag.com', img.width / 2, img.height - 30)
+              // Add watermark stroke for better visibility
               ctx.strokeStyle = 'rgba(128, 0, 128, 0.5)'
               ctx.lineWidth = 2
               ctx.strokeText('DubaiKismag.com', img.width / 2, img.height - 30)
@@ -145,12 +102,12 @@ export default function PostPage() {
     const newErrors: Record<string, string> = {}
     
     if (!formData.category) newErrors.category = 'Category is required'
-    if (!formData.subcategory) newErrors.subcategory = 'Subcategory is required'
     if (!formData.title.trim()) newErrors.title = 'Title is required'
     if (!formData.price.trim()) newErrors.price = 'Price is required'
     if (!formData.description.trim()) newErrors.description = 'Description is required'
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
     
+    // Validate phone number (UAE format)
     const phoneRegex = /^(\+971|971|05|5)[0-9]{8,9}$/
     if (formData.phone && !phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
       newErrors.phone = 'Enter a valid UAE phone number'
@@ -168,32 +125,16 @@ export default function PostPage() {
     
     if (!validateForm()) return
     
-    // If paid plan selected, redirect to Stripe payment first
-    if (formData.plan !== 'free') {
-      // Store form data in localStorage so we can retrieve after payment
-      localStorage.setItem('pendingListing', JSON.stringify({
-        ...formData,
-        selectedCategoryEmoji: selectedCategoryObj?.emoji
-      }))
-      // Redirect to Stripe payment
-      window.location.href = STRIPE_PAYMENT_LINK
-      return
-    }
-    
-    // Free plan - submit directly
-    submitListing()
-  }
-
-  const submitListing = () => {
+    // Create listing
     const newListing = {
       id: Date.now().toString(),
       title: formData.title,
       price: parseFloat(formData.price) || 0,
-      priceType: formData.priceType as 'fixed' | 'monthly' | 'yearly' | 'kg' | 'negotiable',
+      priceType: formData.priceType as 'fixed' | 'monthly' | 'yearly' | 'kg',
       category: formData.category,
       subcategory: formData.subcategory,
       location: formData.location,
-      emoji: selectedCategoryObj?.emoji || '📦',
+      emoji: getCategoryEmoji(formData.category),
       phone: formData.phone,
       whatsapp: formData.phone,
       description: formData.description,
@@ -211,10 +152,16 @@ export default function PostPage() {
     addListing(newListing)
     setShowSuccess(true)
     
+    // Reset form after delay
     setTimeout(() => {
       setShowSuccess(false)
       router.push('/')
     }, 2000)
+  }
+
+  const getCategoryEmoji = (category: string) => {
+    const found = categories.find(c => c.id === category)
+    return found?.emoji || '📦'
   }
 
   const plans = [
@@ -225,17 +172,18 @@ export default function PostPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f3ff] pb-24">
-      <Header />
-      <TopTabs />
+      <Header showSearch={false} />
       
-      <div className="bg-white px-4 py-3 flex items-center gap-3 border-b border-gray-100 fixed top-[184px] left-0 right-0 z-30 w-full">
+      {/* Back button header */}
+      <div className="bg-white px-4 py-3 flex items-center gap-3 border-b border-gray-100 sticky top-0 z-40">
         <button onClick={() => router.back()} className="p-2 -ml-2">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <h1 className="text-lg font-bold text-gray-900">Post Your Ad</h1>
       </div>
 
-      <main className="px-4 pt-[240px] pb-4">
+      <main className="px-4 py-4">
+        {/* Header Info */}
         <div className="flex items-center gap-3 mb-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
           <span className="text-3xl">📝</span>
           <div>
@@ -244,57 +192,30 @@ export default function PostPage() {
           </div>
         </div>
 
-        {/* Main Category Selection */}
+        {/* Category */}
         <div className="mb-4">
           <label className="block text-sm font-semibold text-gray-900 mb-2">Category *</label>
-          <div className="grid grid-cols-3 gap-2">
-            {mainCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setFormData({ ...formData, category: cat.id, subcategory: '', specs: {} })}
-                className={`p-3 rounded-xl border-2 text-center transition-all ${
-                  formData.category === cat.id
-                    ? 'border-purple-500 bg-purple-50'
-                    : 'border-gray-200 bg-white'
-                }`}
-              >
-                <div className="text-2xl mb-1">{cat.emoji}</div>
-                <p className="text-xs font-medium text-gray-900">{cat.name}</p>
-              </button>
+          <select
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value, specs: {} })}
+            className={`w-full p-4 bg-white border rounded-xl text-gray-900 ${
+              errors.category ? 'border-red-500' : 'border-gray-200'
+            }`}
+          >
+            <option value="">-- Select Category --</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.emoji} {cat.name}</option>
             ))}
-          </div>
+          </select>
           {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
         </div>
 
-        {/* Subcategory Selection */}
-        {formData.category && selectedCategoryObj && (
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-gray-900 mb-2">Subcategory *</label>
-            <div className="grid grid-cols-2 gap-2">
-              {selectedCategoryObj.subcategories.map((subcat) => (
-                <button
-                  key={subcat}
-                  onClick={() => setFormData({ ...formData, subcategory: subcat })}
-                  className={`p-3 rounded-lg border-2 text-center text-sm transition-all ${
-                    formData.subcategory === subcat
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 bg-white'
-                  }`}
-                >
-                  {subcat}
-                </button>
-              ))}
-            </div>
-            {errors.subcategory && <p className="text-red-500 text-sm mt-1">{errors.subcategory}</p>}
-          </div>
-        )}
-
-        {/* Category-specific Specifications */}
-        {currentSpecs.length > 0 && formData.category && (
+        {/* Category-specific specifications */}
+        {currentSpecs.length > 0 && (
           <div className="mb-4 p-4 bg-gray-50 rounded-xl">
             <label className="block text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Info className="w-4 h-4 text-purple-500" />
-              {selectedCategoryObj?.name} Details
+              {formData.category} Specifications
             </label>
             <div className="grid grid-cols-2 gap-3">
               {currentSpecs.map((spec) => (

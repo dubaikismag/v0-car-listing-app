@@ -1,26 +1,24 @@
 'use client'
 
-import { Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 
 const tabs = [
   { id: 'Home', emoji: '🏠', href: '/' },
   { id: 'Jobs', emoji: '💼', href: '/browse?category=Jobs' },
-  { id: 'Real Estate', emoji: '🏢', href: '/browse?category=Rooms' },
-  { id: 'Cars', emoji: '🚗', href: '/browse?category=Cars' },
-  { id: 'Services', emoji: '🛠', href: '/browse?category=Services' },
-  { id: 'Buy & Sell', emoji: '🛒', href: '/browse?category=Buy & Sell' },
-  { id: 'Wanted', emoji: '❤️', href: '/browse?category=Wanted' },
-  { id: 'Community', emoji: '👥', href: '/browse?category=Community' },
+  { id: 'Rooms', emoji: '🏘️', href: '/browse?category=Property' },
+  { id: 'Ads', emoji: '📋', href: '/browse' },
+  { id: 'Wanted', emoji: '🤝', href: '/wanted' },
+  { id: 'Groups', emoji: '🌍', href: '/groups' },
   { id: 'Fun', emoji: '🎮', href: '/fun' },
+  { id: '+ Post', emoji: '', href: '/post' }
 ]
 
 interface TopTabsProps {
   onTabChange?: (tab: string) => void
 }
 
-function TopTabsContent({ onTabChange }: TopTabsProps) {
+export function TopTabs({ onTabChange }: TopTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -37,23 +35,21 @@ function TopTabsContent({ onTabChange }: TopTabsProps) {
     if (pathname === '/browse') {
       const category = searchParams.get('category')
       if (category === 'Jobs') return 'Jobs'
-      if (category === 'Rooms') return 'Real Estate'
-      if (category === 'Cars') return 'Cars'
-      if (category === 'Services') return 'Services'
-      if (category === 'Buy & Sell') return 'Buy & Sell'
-      if (category === 'Wanted') return 'Wanted'
-      if (category === 'Community') return 'Community'
-      return 'Browse'
+      if (category === 'Property') return 'Rooms'
+      return 'Ads'
     }
+    if (pathname === '/wanted') return 'Wanted'
+    if (pathname === '/groups') return 'Groups'
     if (pathname === '/fun') return 'Fun'
+    if (pathname === '/post') return '+ Post'
     return currentTab
   }
 
   const activeTab = getActiveTab()
 
   return (
-    <div className="fixed top-[140px] left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-sm w-full">
-        <div className="flex items-center overflow-x-auto hide-scrollbar px-2 py-2 gap-1 min-h-[44px] leading-none">
+    <div className="bg-white border-b border-gray-100 sticky top-[116px] z-40 shadow-sm">
+      <div className="flex overflow-x-auto hide-scrollbar px-2 py-2 gap-1">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
           const isPostTab = tab.id === '+ Post'
@@ -77,24 +73,5 @@ function TopTabsContent({ onTabChange }: TopTabsProps) {
         })}
       </div>
     </div>
-  )
-}
-
-export function TopTabs({ onTabChange }: TopTabsProps) {
-  return (
-    <Suspense fallback={
-      <div className="fixed top-[140px] left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-sm w-full">
-      <div className="flex items-center overflow-x-auto hide-scrollbar px-2 py-2 gap-1 min-h-[44px] leading-none">
-          {tabs.map((tab) => (
-            <div key={tab.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap text-sm font-medium text-gray-400">
-              {tab.emoji && <span>{tab.emoji}</span>}
-              <span>{tab.id}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    }>
-      <TopTabsContent onTabChange={onTabChange} />
-    </Suspense>
   )
 }

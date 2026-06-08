@@ -687,13 +687,13 @@ export const categorySpecs: Record<string, string[]> = {
 export const topTabs = [
   { id: 'home', name: 'Home', emoji: '🏠' },
   { id: 'jobs', name: 'Jobs', emoji: '💼' },
-  { id: 'rooms', name: 'Rooms', emoji: '🏠' },
-  { id: 'cars', name: 'Cars', emoji: '🚗' },
-  { id: 'services', name: 'Services', emoji: '🛠' },
-  { id: 'buysell', name: 'Buy & Sell', emoji: '🛒' },
-  { id: 'wanted', name: 'Wanted', emoji: '❤️' },
-  { id: 'community', name: 'Community', emoji: '👥' },
+  { id: 'rooms', name: 'Rooms', emoji: '🏘️' },
+  { id: 'ads', name: 'Ads', emoji: '📋' },
+  { id: 'reels', name: 'Reels', emoji: '🎬' },
+  { id: 'wanted', name: 'Wanted', emoji: '🤝' },
+  { id: 'groups', name: 'Groups', emoji: '🌍' },
   { id: 'fun', name: 'Fun', emoji: '🎮' },
+  { id: 'post', name: '+ Post', emoji: '' }
 ]
 
 // Country filters for communities

@@ -6,7 +6,7 @@ import { Plus, Menu, Search } from 'lucide-react'
 
 const navItems = [
   { href: '/', label: 'Home', emoji: '🏠' },
-  { href: '/browse', label: 'Explore', icon: 'search' },
+  { href: '/browse', label: 'Browse', icon: 'search' },
   { href: '/post', label: '', isCenter: true },
   { href: '/fun', label: 'Fun', emoji: '🎮' },
   { href: '/more', label: 'More', icon: 'menu' }

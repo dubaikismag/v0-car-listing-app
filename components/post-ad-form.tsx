@@ -2,11 +2,9 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { categories } from '@/lib/store'
+import { useAppStore, categories, type Listing } from '@/lib/store'
 import { useAuth } from '@/lib/auth-context'
 import { addWatermark, validatePhoneNumber } from '@/lib/image-utils'
-import { createListing, type CreateListingInput } from '@/lib/listings-service'
-import { uploadMultipleImages, validateImageFile, compressImage } from '@/lib/image-upload-service'
 import { Upload, X, Loader2, AlertCircle, Plus } from 'lucide-react'
 
 interface FormErrors {
@@ -19,38 +17,19 @@ interface SpecField {
 }
 
 const categorySpecs: Record<string, string[]> = {
-  'Cars': ['Brand', 'Model', 'Year', 'Kilometers', 'Color', 'Fuel Type', 'Transmission'],
-  'Real Estate': ['Bedrooms', 'Bathrooms', 'Size (sqft)', 'Furnished', 'Floor', 'Parking'],
-  'Buy & Sell': ['Brand', 'Model', 'Condition', 'Color', 'Age'],
-  'Jobs': ['Position', 'Experience', 'Salary Range', 'Work Type', 'Industry'],
-  'Services': ['Experience', 'Availability', 'Service Area', 'Languages'],
-  'Wanted': ['Budget', 'Urgency', 'Condition Preference'],
-  'Community': ['Group Type', 'Members', 'Activity'],
-  'Fun': ['Type', 'Duration', 'Location']
-}
-
-// Map category names to the database values
-const categoryMapping: Record<string, string> = {
-  'vehicles': 'Cars',
-  'property': 'Real Estate',
-  'jobs': 'Jobs',
-  'labour': 'Services',
-  'electronics': 'Buy & Sell',
-  'furniture': 'Buy & Sell',
-  'farmland': 'Buy & Sell',
-  'more': 'Buy & Sell',
-  'cars': 'Cars',
-  'real-estate': 'Real Estate',
-  'services': 'Services',
-  'buy-sell': 'Buy & Sell',
-  'wanted': 'Wanted',
-  'community': 'Community',
-  'fun': 'Fun'
+  Vehicles: ['Brand', 'Model', 'Year', 'Kilometers', 'Color', 'Fuel Type', 'Transmission'],
+  Property: ['Bedrooms', 'Bathrooms', 'Size', 'Furnished', 'Floor', 'Parking'],
+  Electronics: ['Brand', 'Model', 'Storage', 'RAM', 'Color', 'Condition'],
+  Jobs: ['Position', 'Experience', 'Salary', 'Work Type'],
+  Labour: ['Experience', 'Languages', 'Availability'],
+  Furniture: ['Material', 'Condition', 'Dimensions'],
+  Farmland: ['Size', 'Water', 'Soil Type']
 }
 
 export function PostAdForm() {
   const router = useRouter()
   const { user, openAuthModal } = useAuth()
+  const addListing = useAppStore((state) => state.addListing)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number[]>([])
@@ -67,13 +46,13 @@ export function PostAdForm() {
   const [phone, setPhone] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [sameAsPhone, setSameAsPhone] = useState(true)
-  const [images, setImages] = useState<{ url: string; file?: File }[]>([])
+  const [images, setImages] = useState<string[]>([])
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'featured' | 'urgent'>('free')
   const [specs, setSpecs] = useState<SpecField[]>([])
 
   const selectedCategory = categories.find((c) => c.id === category)
 
-  // Handle image upload with watermark and preview
+  // Handle image upload with watermark
   const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
@@ -81,22 +60,24 @@ export function PostAdForm() {
     const newProgress = Array(files.length).fill(0)
     setUploadProgress(newProgress)
 
-    const newImages: { url: string; file: File }[] = []
+    const newImages: string[] = []
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       
-      // Validate file
-      const validation = validateImageFile(file)
-      if (!validation.valid) {
-        setErrors((prev) => ({ ...prev, images: validation.error || 'Invalid file' }))
+      if (!file.type.startsWith('image/')) {
+        setErrors((prev) => ({ ...prev, images: 'Only image files are allowed' }))
+        continue
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, images: 'Image size must be less than 5MB' }))
         continue
       }
 
       try {
-        // Show progress
-        for (let p = 0; p <= 50; p += 10) {
-          await new Promise((r) => setTimeout(r, 50))
+        for (let p = 0; p <= 100; p += 20) {
+          await new Promise((r) => setTimeout(r, 100))
           setUploadProgress((prev) => {
             const updated = [...prev]
             updated[i] = p
@@ -104,27 +85,10 @@ export function PostAdForm() {
           })
         }
 
-        // Compress if needed
-        let processedFile = file
-        if (file.size > 1024 * 1024) {
-          processedFile = await compressImage(file)
-        }
-
-        // Add watermark
-        const watermarkedUrl = await addWatermark(processedFile)
-        
-        for (let p = 50; p <= 100; p += 10) {
-          await new Promise((r) => setTimeout(r, 50))
-          setUploadProgress((prev) => {
-            const updated = [...prev]
-            updated[i] = p
-            return updated
-          })
-        }
-
-        newImages.push({ url: watermarkedUrl, file: processedFile })
+        const watermarkedImage = await addWatermark(file)
+        newImages.push(watermarkedImage)
       } catch (error) {
-        console.error('[v0] Image processing error:', error)
+        console.error('Image processing error:', error)
         setErrors((prev) => ({ ...prev, images: 'Failed to process image' }))
       }
     }
@@ -214,21 +178,6 @@ export function PostAdForm() {
     setIsSubmitting(true)
 
     try {
-      // Upload images to Supabase storage
-      let imageUrls: string[] = []
-      
-      if (images.length > 0) {
-        const filesToUpload = images
-          .filter(img => img.file)
-          .map(img => img.file as File)
-        
-        if (filesToUpload.length > 0) {
-          const uploadResults = await uploadMultipleImages(filesToUpload, 'listings')
-          imageUrls = uploadResults.map(r => r.url)
-        }
-      }
-
-      // Build specs object
       const specsObject: Record<string, string> = {}
       specs.forEach((spec) => {
         if (spec.key.trim() && spec.value.trim()) {
@@ -236,50 +185,51 @@ export function PostAdForm() {
         }
       })
 
-      // Get the correct category name for the database
-      const dbCategory = categoryMapping[category] || selectedCategory?.name || 'Buy & Sell'
-
       const categoryEmojis: Record<string, string> = {
-        'Cars': '🚗',
-        'Real Estate': '🏠',
-        'Jobs': '💼',
-        'Services': '🛠️',
-        'Buy & Sell': '🛒',
-        'Wanted': '❤️',
-        'Community': '👥',
-        'Fun': '🎮'
+        vehicles: '🚗',
+        property: '🏠',
+        jobs: '💼',
+        labour: '👷',
+        electronics: '📱',
+        furniture: '🛋️',
+        farmland: '🌾',
+        more: '📦'
       }
 
-      const listingInput: CreateListingInput = {
+      const newListing: Listing = {
+        id: Math.random().toString(36).substring(7),
         title: title.trim(),
         description: description.trim(),
         price: parseFloat(price),
-        price_type: priceType,
-        category: dbCategory,
+        priceType: priceType === 'fixed' ? undefined : priceType,
+        category: selectedCategory?.name || category,
         subcategory: subcategory || undefined,
+        emoji: categoryEmojis[category] || '📦',
         location: location.trim(),
-        emoji: categoryEmojis[dbCategory] || '📦',
-        image_urls: imageUrls,
-        specs: specsObject,
         phone: phone,
         whatsapp: sameAsPhone ? phone : whatsapp,
-        tags: []
+        images,
+        specs: specsObject,
+        isFeatured: selectedPlan !== 'free',
+        featuredDays: selectedPlan === 'featured' ? 7 : selectedPlan === 'urgent' ? 14 : 0,
+        badge: selectedPlan === 'urgent' ? 'HOT' : selectedPlan === 'featured' ? 'NEW' : undefined,
+        views: 0
       }
 
-      // Create listing in Supabase
-      await createListing(listingInput)
+      addListing(newListing)
       
-      // Redirect to home
+      await new Promise((r) => setTimeout(r, 1000))
+      
       router.push('/')
     } catch (error) {
-      console.error('[v0] Submit error:', error)
-      setErrors({ submit: error instanceof Error ? error.message : 'Failed to post ad. Please try again.' })
+      console.error('Submit error:', error)
+      setErrors({ submit: 'Failed to post ad. Please try again.' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const suggestedSpecs = selectedCategory ? categorySpecs[categoryMapping[category] || selectedCategory.name] || [] : []
+  const suggestedSpecs = selectedCategory ? categorySpecs[selectedCategory.name] || [] : []
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pb-32">
@@ -293,8 +243,7 @@ export function PostAdForm() {
             setSubcategory('')
             const cat = categories.find((c) => c.id === e.target.value)
             if (cat) {
-              const catName = categoryMapping[e.target.value] || cat.name
-              const defaultSpecs = categorySpecs[catName] || []
+              const defaultSpecs = categorySpecs[cat.name] || []
               setSpecs(defaultSpecs.slice(0, 4).map((key) => ({ key, value: '' })))
             }
           }}
@@ -435,12 +384,12 @@ export function PostAdForm() {
 
       {/* Photos */}
       <div>
-        <label className="block text-sm font-semibold text-gray-900 mb-2">Photos (up to 8)</label>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">Photos</label>
         <div className="grid grid-cols-4 gap-2">
           {images.map((image, index) => (
             <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image.url} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
+              <img src={image} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={() => removeImage(index)}
@@ -464,8 +413,8 @@ export function PostAdForm() {
                 <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
               ) : (
                 <>
-                  <Upload className="w-6 h-6 text-gray-400" />
-                  <span className="text-xs text-gray-500 mt-1">Add photos</span>
+                  <span className="text-2xl">📷</span>
+                  <span className="text-xs text-gray-500 mt-1">Tap to add up to 8 photos</span>
                 </>
               )}
             </label>
@@ -555,7 +504,7 @@ export function PostAdForm() {
             onClick={() => setSelectedPlan('featured')}
             className={`p-3 rounded-xl border-2 text-center ${selectedPlan === 'featured' ? 'border-amber-500 bg-amber-50' : 'border-gray-200'}`}
           >
-            <p className="font-bold text-sm">FEATURED</p>
+            <p className="font-bold text-sm flex items-center justify-center gap-1">⭐ FEATURED</p>
             <p className="text-amber-600 font-bold">AED 20</p>
             <p className="text-xs text-gray-500">Top of list</p>
           </button>
@@ -564,7 +513,7 @@ export function PostAdForm() {
             onClick={() => setSelectedPlan('urgent')}
             className={`p-3 rounded-xl border-2 text-center ${selectedPlan === 'urgent' ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}
           >
-            <p className="font-bold text-sm">URGENT</p>
+            <p className="font-bold text-sm flex items-center justify-center gap-1">🚀 URGENT</p>
             <p className="text-red-600 font-bold">AED 50</p>
             <p className="text-xs text-gray-500">5x views</p>
           </button>
